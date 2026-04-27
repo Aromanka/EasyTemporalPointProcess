@@ -252,3 +252,67 @@ class IntensityFree(TorchBaseModel):
         mark_logits = torch.log_softmax(self.mark_linear(context), dim=-1)  # Marks are modeled conditionally independently from times
         types_pred = torch.argmax(mark_logits, dim=-1)
         return dtimes_pred, types_pred
+
+    # New Added for Generation Eval
+    @torch.no_grad()
+    def predict_next_event_since_last(
+        self,
+        time_seq,
+        time_delta_seq,
+        event_seq,
+        sample_dtime: bool = False,
+        sample_type: bool = False,
+        temperature: float = 1.0,
+        forbid_event_ids=None,
+    ):
+        """
+        IntensityFree-specific next-event prediction.
+        Time is generated from the log-normal mixture distribution;
+        mark is generated from mark_linear(context).
+        """
+        context = self.forward(time_delta_seq, event_seq)
+
+        # Only use last hidden state.
+        context_last = context[:, -1:, :]  # [B, 1, H]
+
+        raw_params = self.linear(context_last)
+        locs = raw_params[..., :self.num_mix_components]
+        log_scales = raw_params[..., self.num_mix_components: 2 * self.num_mix_components]
+        log_weights = raw_params[..., 2 * self.num_mix_components:]
+
+        log_scales = clamp_preserve_gradients(log_scales, -5.0, 3.0)
+        log_weights = torch.log_softmax(log_weights, dim=-1)
+
+        inter_time_dist = LogNormalMixtureDistribution(
+            locs=locs,
+            log_scales=log_scales,
+            log_weights=log_weights,
+            mean_log_inter_time=self.mean_log_inter_time,
+            std_log_inter_time=self.std_log_inter_time,
+        )
+
+        if sample_dtime:
+            dtimes_pred = inter_time_dist.sample().squeeze(-1)  # [B, 1]
+        else:
+            num_samples = self.event_sampler.num_sample if self.event_sampler is not None else 128
+            sampled_dtimes = inter_time_dist.sample((num_samples,)).squeeze(-1)  # [S, B, 1]
+            dtimes_pred = sampled_dtimes.mean(dim=0)  # [B, 1]
+
+        # Important: do not allow PAD as a generated mark.
+        mark_logits = self.mark_linear(context_last).squeeze(1)[:, :self.num_event_types]
+        mark_logits = mark_logits / max(float(temperature), self.eps)
+
+        if forbid_event_ids is not None:
+            mark_logits = mark_logits.clone()
+            for eid in forbid_event_ids:
+                if 0 <= int(eid) < mark_logits.size(-1):
+                    mark_logits[:, int(eid)] = -1e9
+
+        type_probs = torch.softmax(mark_logits, dim=-1)
+
+        if sample_type:
+            types_pred = torch.multinomial(type_probs, num_samples=1)
+        else:
+            types_pred = torch.argmax(type_probs, dim=-1, keepdim=True)
+
+        return dtimes_pred.clamp(min=self.eps), types_pred, type_probs

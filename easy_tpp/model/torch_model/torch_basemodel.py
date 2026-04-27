@@ -268,3 +268,223 @@ class TorchBaseModel(nn.Module):
 
         return time_delta_seq[:, -num_step - 1:], event_seq[:, -num_step - 1:], \
                time_delta_seq_label[:, -num_step - 1:], event_seq_label[:, -num_step - 1:]
+
+    # New Added for Generation Evaluate
+    @torch.no_grad()
+    def predict_next_event_since_last(
+        self,
+        time_seq,
+        time_delta_seq,
+        event_seq,
+        sample_dtime: bool = False,
+        sample_type: bool = False,
+        temperature: float = 1.0,
+        forbid_event_ids=None,
+    ):
+        """
+        Predict / sample one next event conditioned on the whole prefix.
+
+        Args:
+            time_seq: [B, L], absolute event times.
+            time_delta_seq: [B, L], inter-event times.
+            event_seq: [B, L], event type ids.
+            sample_dtime: if True, sample one accepted time; otherwise use weighted mean.
+            sample_type: if True, sample event type from normalized intensity; otherwise argmax.
+            temperature: mark sampling temperature.
+            forbid_event_ids: optional list of event ids to mask.
+
+        Returns:
+            dtimes_pred: [B, 1]
+            types_pred: [B, 1]
+            type_probs: [B, num_event_types]
+        """
+        if self.event_sampler is None:
+            raise RuntimeError(
+                f"{self.__class__.__name__} has no event_sampler. "
+                "Please set model_config.thinning in yaml or override "
+                "predict_next_event_since_last for this model."
+            )
+
+        # Only the last step is needed, but EasyTPP's thinning API expects full prefix tensors.
+        dtime_boundary = time_delta_seq + self.event_sampler.dtime_max
+
+        accepted_dtimes, weights = self.event_sampler.draw_next_time_one_step(
+            time_seq,
+            time_delta_seq,
+            event_seq,
+            dtime_boundary,
+            self.compute_intensities_at_sample_times,
+            compute_last_step_only=True,
+        )
+
+        # accepted_dtimes / weights: [B, 1, S]
+        if sample_dtime:
+            bsz, one, num_samples = accepted_dtimes.shape
+            flat_weights = weights.reshape(-1, num_samples)
+            sampled_idx = torch.multinomial(flat_weights, num_samples=1)
+            sampled_idx = sampled_idx.reshape(bsz, one, 1)
+            dtimes_pred = torch.gather(accepted_dtimes, dim=-1, index=sampled_idx).squeeze(-1)
+        else:
+            dtimes_pred = torch.sum(accepted_dtimes * weights, dim=-1)
+
+        # Query mark intensity at the predicted next time.
+        intensities_at_times = self.compute_intensities_at_sample_times(
+            time_seq,
+            time_delta_seq,
+            event_seq,
+            dtimes_pred[:, :, None],
+            max_steps=event_seq.size(1),
+            compute_last_step_only=True,
+        )
+
+        # Usually [B, 1, 1, M]. Some model implementations may return [B, L, 1, M].
+        intensities_at_times = intensities_at_times.squeeze(dim=-2)
+        mark_score = intensities_at_times[:, -1, :].clone()  # [B, M]
+
+        if forbid_event_ids is not None:
+            for eid in forbid_event_ids:
+                if 0 <= int(eid) < mark_score.size(-1):
+                    mark_score[:, int(eid)] = 0.0
+
+        # Convert intensities to categorical probabilities over marks.
+        logits = torch.log(mark_score + self.eps) / max(float(temperature), self.eps)
+        type_probs = torch.softmax(logits, dim=-1)
+
+        if sample_type:
+            types_pred = torch.multinomial(type_probs, num_samples=1)
+        else:
+            types_pred = torch.argmax(type_probs, dim=-1, keepdim=True)
+
+        dtimes_pred = dtimes_pred.clamp(min=self.eps)
+        return dtimes_pred, types_pred, type_probs
+
+    @torch.no_grad()
+    def generate_trajectory(
+        self,
+        time_seq,
+        time_delta_seq,
+        event_seq,
+        max_steps: int,
+        max_time=None,
+        include_prefix: bool = True,
+        sample_dtime: bool = False,
+        sample_type: bool = False,
+        temperature: float = 1.0,
+        forbid_event_ids=None,
+        return_dict: bool = True,
+    ):
+        """
+        Autoregressively generate a future trajectory from a given prefix.
+
+        Args:
+            time_seq: [B, L], prefix absolute times. Should contain no right padding.
+            time_delta_seq: [B, L], prefix deltas.
+            event_seq: [B, L], prefix event types.
+            max_steps: maximum number of generated events.
+            max_time: stop generating events whose absolute time exceeds this value.
+            include_prefix: if True, return prefix + continuation.
+            sample_dtime/sample_type: use stochastic generation instead of mean/argmax.
+            temperature: mark sampling temperature.
+            forbid_event_ids: optional event ids to mask from generation.
+            return_dict: if True, return a dict.
+
+        Returns:
+            dict or tuple containing generated full/predicted trajectory.
+        """
+        self.eval()
+
+        time_seq = time_seq.to(self.device)
+        time_delta_seq = time_delta_seq.to(self.device)
+        event_seq = event_seq.to(self.device)
+
+        prefix_time = time_seq.clone()
+        prefix_dtime = time_delta_seq.clone()
+        prefix_event = event_seq.clone()
+
+        batch_size = event_seq.size(0)
+        alive = torch.ones((batch_size, 1), dtype=torch.bool, device=self.device)
+
+        gen_times = []
+        gen_dtimes = []
+        gen_events = []
+        gen_masks = []
+
+        pad_event = torch.full(
+            (batch_size, 1),
+            fill_value=self.pad_token_id,
+            dtype=event_seq.dtype,
+            device=self.device,
+        )
+
+        for _ in range(int(max_steps)):
+            if not alive.any():
+                break
+
+            next_dtime, next_event, _ = self.predict_next_event_since_last(
+                time_seq=time_seq,
+                time_delta_seq=time_delta_seq,
+                event_seq=event_seq,
+                sample_dtime=sample_dtime,
+                sample_type=sample_type,
+                temperature=temperature,
+                forbid_event_ids=forbid_event_ids,
+            )
+
+            next_time = time_seq[:, -1:] + next_dtime
+
+            valid_next = alive & torch.isfinite(next_time) & torch.isfinite(next_dtime) & (next_dtime > 0)
+            if max_time is not None:
+                max_time_tensor = torch.as_tensor(max_time, dtype=next_time.dtype, device=self.device)
+                valid_next = valid_next & (next_time <= max_time_tensor)
+
+            append_time = torch.where(valid_next, next_time, time_seq[:, -1:])
+            append_dtime = torch.where(valid_next, next_dtime, torch.zeros_like(next_dtime))
+            append_event = torch.where(valid_next, next_event, pad_event)
+
+            gen_times.append(append_time)
+            gen_dtimes.append(append_dtime)
+            gen_events.append(append_event)
+            gen_masks.append(valid_next)
+
+            time_seq = torch.cat([time_seq, append_time], dim=-1)
+            time_delta_seq = torch.cat([time_delta_seq, append_dtime], dim=-1)
+            event_seq = torch.cat([event_seq, append_event], dim=-1)
+
+            alive = valid_next
+
+        if len(gen_times) == 0:
+            gen_time_seq = time_seq.new_empty((batch_size, 0))
+            gen_dtime_seq = time_delta_seq.new_empty((batch_size, 0))
+            gen_event_seq = event_seq.new_empty((batch_size, 0))
+            gen_mask = torch.empty((batch_size, 0), dtype=torch.bool, device=self.device)
+        else:
+            gen_time_seq = torch.cat(gen_times, dim=-1)
+            gen_dtime_seq = torch.cat(gen_dtimes, dim=-1)
+            gen_event_seq = torch.cat(gen_events, dim=-1)
+            gen_mask = torch.cat(gen_masks, dim=-1)
+
+        if include_prefix:
+            out_time = torch.cat([prefix_time, gen_time_seq], dim=-1)
+            out_dtime = torch.cat([prefix_dtime, gen_dtime_seq], dim=-1)
+            out_event = torch.cat([prefix_event, gen_event_seq], dim=-1)
+            prefix_mask = torch.ones_like(prefix_event, dtype=torch.bool, device=self.device)
+            out_mask = torch.cat([prefix_mask, gen_mask], dim=-1)
+        else:
+            out_time = gen_time_seq
+            out_dtime = gen_dtime_seq
+            out_event = gen_event_seq
+            out_mask = gen_mask
+
+        if return_dict:
+            return {
+                "time_seq": out_time,
+                "time_delta_seq": out_dtime,
+                "event_seq": out_event,
+                "seq_non_pad_mask": out_mask,
+                "generated_time_seq": gen_time_seq,
+                "generated_time_delta_seq": gen_dtime_seq,
+                "generated_event_seq": gen_event_seq,
+                "generated_mask": gen_mask,
+            }
+
+        return out_time, out_dtime, out_event, out_mask
