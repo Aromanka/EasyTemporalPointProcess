@@ -434,3 +434,16 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+"""
+# run commands
+python examples/evaluate_trajectory_generation.py \
+  --config_dir examples/configs/experiment_config.yaml \
+  --experiment_id NHP_traj_eval \
+  --split test \
+  --cutoff_time 21915.0 \
+  --max_time 31067.5 \
+  --samples 100 \
+  --max_new_events 100 \
+  --output_dir outputs/nhp_traj_eval_cutoff60
+"""

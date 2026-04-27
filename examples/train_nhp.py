@@ -24,3 +24,8 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+"""
+python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id AttNHP_train
+python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id AttNHP_eval
+"""

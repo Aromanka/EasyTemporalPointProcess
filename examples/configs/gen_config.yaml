@@ -1,0 +1,56 @@
+pipeline_config_id: runner_config
+
+data:
+  taxi:
+    data_format: pkl
+    train_dir:  data/taxi/train.pkl  # ./data/taxi/train.json
+    valid_dir:  data/taxi/dev.pkl # ./data/taxi/dev.json
+    test_dir:  data/taxi/test.pkl # ./data/taxi/test.json
+    data_specs:
+      num_event_types: 10
+      pad_token_id: 10
+      padding_side: right
+  amazon:
+    data_format: pkl
+    train_dir: data/amazon/train.pkl
+    valid_dir: data/amazon/dev.pkl
+    test_dir: data/amazon/test.pkl
+    data_specs:
+      num_event_types: 16
+      pad_token_id: 16
+      padding_side: right
+      truncation_side: right
+#      padding_strategy: max_length
+#      truncation_strategy: longest_first # or Truncate to a maximum length specified with the argument `max_length`
+#      max_len: 20
+
+NHP_traj_eval:
+  base_config:
+    stage: gen
+    backend: torch
+    dataset_id: taxi
+    runner_id: std_tpp
+    model_id: NHP
+    base_dir: './checkpoints/'
+  trainer_config:
+    batch_size: 1
+    max_epoch: 1
+    shuffle: False
+    use_tfb: False
+    metrics: ['acc', 'rmse']
+    seed: 2019
+    gpu: 0
+  model_config:
+    hidden_size: 64
+    loss_integral_num_sample_per_step: 20
+    pretrained_model_dir: ./checkpoints/your_run_dir/models/saved_model
+    thinning:
+      num_seq: 10
+      num_sample: 32
+      num_exp: 500
+      look_ahead_time: 10
+      patience_counter: 5
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5
+      num_step_gen: 1

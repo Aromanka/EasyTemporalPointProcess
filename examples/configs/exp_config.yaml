@@ -1,0 +1,105 @@
+pipeline_config_id: runner_config
+
+data:
+  taxi:
+    data_format: pkl
+    train_dir:  data/taxi/train.pkl  # ./data/taxi/train.json
+    valid_dir:  data/taxi/dev.pkl # ./data/taxi/dev.json
+    test_dir:  data/taxi/test.pkl # ./data/taxi/test.json
+    data_specs:
+      num_event_types: 10
+      pad_token_id: 10
+      padding_side: right
+  amazon:
+    data_format: pkl
+    train_dir: data/amazon/train.pkl
+    valid_dir: data/amazon/dev.pkl
+    test_dir: data/amazon/test.pkl
+    data_specs:
+      num_event_types: 16
+      pad_token_id: 16
+      padding_side: right
+      truncation_side: right
+  ukb:
+    data_format: json
+    train_dir: data/ukb/train.json
+    valid_dir: data/ukb/val.json
+    test_dir: data/ukb/val.json
+    data_specs:
+      num_event_types: 1145
+      pad_token_id: 0
+      padding_side: right
+      truncation_side: right
+#      padding_strategy: max_length
+#      truncation_strategy: longest_first # or Truncate to a maximum length specified with the argument `max_length`
+#      max_len: 20
+
+# AttNHP -------------------
+AttNHP_train:
+  base_config:
+    stage: train
+    backend: torch
+    dataset_id: ukb
+    runner_id: std_tpp
+    model_id: AttNHP # model name
+    base_dir: './checkpoints/AttNHP'
+  trainer_config:
+    batch_size: 32
+    max_epoch: 40
+    shuffle: False
+    optimizer: adam
+    learning_rate: 1.e-3
+    valid_freq: 10
+    use_tfb: False
+    metrics: [ 'acc', 'rmse' ]
+    seed: 2019
+    gpu: 0
+  model_config:
+    hidden_size: 32
+    time_emb_size: 16
+    num_layers: 3
+    num_heads: 4
+    loss_integral_num_sample_per_step: 10
+    use_ln: False
+    thinning:
+      num_seq: 2
+      num_sample: 1
+      num_exp: 50 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
+      look_ahead_time: 10
+      patience_counter: 5 # the maximum iteration used in adaptive thinning
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5
+      num_step_gen: 1
+
+
+AttNHP_eval:
+  base_config:
+    stage: eval
+    backend: torch
+    dataset_id: ukb
+    runner_id: std_tpp
+    base_dir: './checkpoints/AttNHP'
+    model_id: AttNHP
+  trainer_config:
+    batch_size: 256
+    max_epoch: 1
+  model_config:
+    hidden_size: 32
+    time_emb_size: 16
+    num_layers: 1
+    num_heads: 2
+    loss_integral_num_sample_per_step: 10
+    use_ln: False
+    gpu: 0
+    pretrained_model_dir: ./checkpoints/2409314_140014458152128_260423-191840/models/saved_model
+    thinning:
+      num_seq: 10
+      num_sample: 1
+      num_exp: 500 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
+      look_ahead_time: 10
+      patience_counter: 5 # the maximum iteration used in adaptive thinning
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5
+
