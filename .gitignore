@@ -29,3 +29,4 @@ examples/checkpoints/*
 notebooks/checkpoints/*
 data/
 checkpoints/
+logs/
