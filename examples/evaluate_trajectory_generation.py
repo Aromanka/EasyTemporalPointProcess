@@ -439,11 +439,11 @@ if __name__ == "__main__":
 # run commands
 python examples/evaluate_trajectory_generation.py \
   --config_dir examples/configs/experiment_config.yaml \
-  --experiment_id NHP_traj_eval \
-  --split test \
+  --experiment_id AttNHP_eval \
+  --split val \
   --cutoff_time 21915.0 \
   --max_time 31067.5 \
   --samples 100 \
   --max_new_events 100 \
-  --output_dir outputs/nhp_traj_eval_cutoff60
+  --output_dir outputs/attnhp_ukb_eval
 """

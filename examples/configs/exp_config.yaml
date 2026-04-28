@@ -87,12 +87,12 @@ AttNHP_eval:
   model_config:
     hidden_size: 32
     time_emb_size: 16
-    num_layers: 1
-    num_heads: 2
+    num_layers: 3
+    num_heads: 4
     loss_integral_num_sample_per_step: 10
     use_ln: False
     gpu: 0
-    pretrained_model_dir: ./checkpoints/2409314_140014458152128_260423-191840/models/saved_model
+    pretrained_model_dir: ./checkpoints/AttNHP/84656_140350651376832_260428-012245/models/saved_model
     thinning:
       num_seq: 10
       num_sample: 1

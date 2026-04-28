@@ -3,6 +3,7 @@ from collections import OrderedDict
 from easy_tpp.runner.base_runner import Runner
 from easy_tpp.utils import RunnerPhase, logger, MetricsHelper, MetricsTracker, concat_element, save_pickle
 from easy_tpp.utils.const import Backend
+from tqdm import tqdm
 
 
 @Runner.register(name='std_tpp')
@@ -182,8 +183,18 @@ class TPPRunner(Runner):
         epoch_mask = []
         pad_index = self.runner_config.data_config.data_specs.pad_token_id
         metrics_dict = OrderedDict()
+
+        use_tqdm = phase in [RunnerPhase.VALIDATE, RunnerPhase.PREDICT]
+        batch_iter = tqdm(
+            data_loader,
+            desc=str(phase).split(".")[-1].lower(),
+            total=len(data_loader),
+            dynamic_ncols=True,
+            leave=True,
+        ) if use_tqdm else data_loader
+
         if phase in [RunnerPhase.TRAIN, RunnerPhase.VALIDATE]:
-            for batch in data_loader:
+            for batch in batch_iter:
                 batch_loss, batch_num_event, batch_pred, batch_label, batch_mask = \
                     self.model_wrapper.run_batch(batch, phase=phase)
 

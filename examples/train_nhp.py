@@ -31,4 +31,6 @@ nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml
 # pid=84656
 
 python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id AttNHP_eval
+nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id AttNHP_eval > logs/AttNHP_eval.log 2>&1 &
+21173
 """
