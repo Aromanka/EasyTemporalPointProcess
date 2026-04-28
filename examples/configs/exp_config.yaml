@@ -44,21 +44,21 @@ AttNHP_train:
     model_id: AttNHP # model name
     base_dir: './checkpoints/AttNHP'
   trainer_config:
-    batch_size: 32
+    batch_size: 16
     max_epoch: 40
     shuffle: False
     optimizer: adam
-    learning_rate: 1.e-3
+    learning_rate: 1.e-4
     valid_freq: 10
     use_tfb: False
     metrics: [ 'acc', 'rmse' ]
     seed: 2019
     gpu: 0
   model_config:
-    hidden_size: 32
-    time_emb_size: 16
-    num_layers: 3
-    num_heads: 4
+    hidden_size: 128
+    time_emb_size: 64
+    num_layers: 12
+    num_heads: 16
     loss_integral_num_sample_per_step: 10
     use_ln: False
     thinning:
@@ -82,7 +82,7 @@ AttNHP_eval:
     base_dir: './checkpoints/AttNHP'
     model_id: AttNHP
   trainer_config:
-    batch_size: 256
+    batch_size: 128
     max_epoch: 1
   model_config:
     hidden_size: 32
