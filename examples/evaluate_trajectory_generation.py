@@ -105,6 +105,8 @@ def build_eval_samples(
 
         batch_size = type_seqs.shape[0]
 
+        print(f"Evaluation batch_size={batch_size}")
+
         for i in range(batch_size):
             valid = seq_non_pad_mask[i]
 
@@ -382,6 +384,7 @@ def main():
 
     model = runner.model
     device = model.device
+    print(f"model on device: {device}")
 
     split = {"valid": "dev", "val": "dev"}.get(args.split, args.split)
     data_loader = runner._data_loader.get_loader(split=split, shuffle=False)
@@ -438,8 +441,8 @@ if __name__ == "__main__":
 """
 # run commands
 python examples/evaluate_trajectory_generation.py \
-  --config_dir examples/configs/experiment_config.yaml \
-  --experiment_id AttNHP_eval \
+  --config_dir examples/configs/exp_config.yaml \
+  --experiment_id NHP_eval \
   --split val \
   --cutoff_time 21915.0 \
   --max_time 31067.5 \

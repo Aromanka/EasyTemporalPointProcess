@@ -48,17 +48,17 @@ AttNHP_train:
     max_epoch: 40
     shuffle: False
     optimizer: adam
-    learning_rate: 1.e-4
+    learning_rate: 3.e-4
     valid_freq: 10
     use_tfb: False
     metrics: [ 'acc', 'rmse' ]
     seed: 2019
-    gpu: 0
+    gpu: 1
   model_config:
     hidden_size: 128
-    time_emb_size: 64
-    num_layers: 12
-    num_heads: 16
+    time_emb_size: 32
+    num_layers: 4
+    num_heads: 8
     loss_integral_num_sample_per_step: 10
     use_ln: False
     thinning:
@@ -91,7 +91,7 @@ AttNHP_eval:
     num_heads: 4
     loss_integral_num_sample_per_step: 10
     use_ln: False
-    gpu: 0
+    gpu: 1
     pretrained_model_dir: ./checkpoints/AttNHP/84656_140350651376832_260428-012245/models/saved_model
     thinning:
       num_seq: 10
@@ -103,3 +103,108 @@ AttNHP_eval:
       num_samples_boundary: 5
       dtime_max: 5
 
+
+# NHP -------------------
+NHP_train:
+  base_config:
+    stage: train
+    backend: torch
+    dataset_id: ukb
+    runner_id: std_tpp
+    model_id: NHP # model name
+    base_dir: './checkpoints/NHP'
+  trainer_config:
+    batch_size: 16
+    max_epoch: 10
+    shuffle: True
+    optimizer: adam
+    learning_rate: 3.e-4
+    valid_freq: 1
+    use_tfb: True  # Activate the tensorboard
+    metrics: [ 'acc', 'rmse' ]
+    seed: 2019
+    gpu: 1
+  model_config:
+    hidden_size: 256
+    loss_integral_num_sample_per_step: 20
+#    pretrained_model_dir: ./checkpoints/75518_4377527680_230530-132355/models/saved_model
+    thinning:
+      num_seq: 10
+      num_sample: 1
+      num_exp: 500 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
+      look_ahead_time: 10
+      patience_counter: 5 # the maximum iteration used in adaptive thinning
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5
+      num_step_gen: 1
+
+# EasyTemporalPointProcess/checkpoints/NHP/115098_140717199631552_260429-114920/models/saved_model
+
+NHP_eval:
+  base_config:
+    stage: eval
+    backend: torch
+    dataset_id: ukb
+    runner_id: std_tpp
+    base_dir: './checkpoints/'
+    model_id: NHP
+  trainer_config:
+    batch_size: 128
+    max_epoch: 1
+    gpu: 1
+  model_config:
+    hidden_size: 256
+    loss_integral_num_sample_per_step: 20
+    use_ln: False
+    seed: 2019
+    # gpu: 1
+    pretrained_model_dir: ./checkpoints/NHP/115098_140717199631552_260429-114920/models/saved_model
+    thinning:
+      num_seq: 10
+      num_sample: 1
+      num_exp: 500 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
+      look_ahead_time: 10
+      patience_counter: 5 # the maximum iteration used in adaptive thinning
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5
+
+# SAHP --------------
+
+SAHP_train:
+  base_config:
+    stage: train
+    backend: torch
+    dataset_id: ukb
+    runner_id: std_tpp
+    model_id: SAHP # model name
+    base_dir: './checkpoints/SAHP'
+  trainer_config:
+    batch_size: 16
+    max_epoch: 40
+    shuffle: False
+    optimizer: adam
+    learning_rate: 3.e-4
+    valid_freq: 1
+    use_tfb: False
+    metrics: [ 'acc', 'rmse' ]
+    seed: 2019
+    gpu: 1
+  model_config:
+    hidden_size: 128
+    time_emb_size: 32
+    num_layers: 4
+    num_heads: 8
+    loss_integral_num_sample_per_step: 20
+    use_ln: False
+    thinning:
+      num_seq: 10
+      num_sample: 1
+      num_exp: 500 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
+      look_ahead_time: 10
+      patience_counter: 5 # the maximum iteration used in adaptive thinning
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5
+      num_step_gen: 1
