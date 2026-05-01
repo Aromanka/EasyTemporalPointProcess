@@ -25,6 +25,13 @@ class DataSpecConfig(Config):
                 f"Truncation side should be selected between 'right' and 'left', current value: {self.truncation_side}"
             )
 
+        # new
+        self.time_normalize = kwargs.get("time_normalize", "raw")
+        self.time_mean = kwargs.get("time_mean", 1.0)
+        self.log_mean = kwargs.get("log_mean", None)
+        self.log_std = kwargs.get("log_std", None)
+        self.eos_token_id = kwargs.get("eos_token_id", None)
+
     def get_yaml_config(self):
         """Return the config in dict (yaml compatible) format.
 
@@ -38,7 +45,14 @@ class DataSpecConfig(Config):
             'truncation_side': self.truncation_side,
             'padding_strategy': self.padding_strategy,
             'truncation_strategy': self.truncation_strategy,
-            'max_len': self.max_len
+            'max_len': self.max_len,
+
+            # new
+            "time_normalize": self.time_normalize,
+            "time_mean": self.time_mean,
+            "log_mean": self.log_mean,
+            "log_std": self.log_std,
+            "eos_token_id": self.eos_token_id,
         }
 
     @staticmethod

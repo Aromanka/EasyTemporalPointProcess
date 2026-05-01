@@ -227,8 +227,23 @@ class TPPRunner(Runner):
                 epoch_mask = concat_element(epoch_mask, False)[0]  # retrieve the first element of concat array
                 epoch_mask = epoch_mask.astype(bool)
 
+        # if pred_exists and label_exists:
+        #     metrics_dict.update(self.metric_functions(epoch_pred, epoch_label, seq_mask=epoch_mask))
         if pred_exists and label_exists:
-            metrics_dict.update(self.metric_functions(epoch_pred, epoch_label, seq_mask=epoch_mask))
+            data_specs = self.runner_config.data_config.data_specs
+
+            metric_kwargs = {
+                "seq_mask": epoch_mask,
+                "time_normalize": getattr(data_specs, "time_normalize", "raw"),
+                "time_mean": getattr(data_specs, "time_mean", 1.0),
+                "log_mean": getattr(data_specs, "log_mean", None),
+                "log_std": getattr(data_specs, "log_std", None),
+                "eos_token_id": getattr(data_specs, "eos_token_id", None),
+            }
+
+            metrics_dict.update(
+                self.metric_functions(epoch_pred, epoch_label, **metric_kwargs)
+            )
 
         if phase == RunnerPhase.PREDICT:
             metrics_dict.update({'pred': epoch_pred, 'label': epoch_label})

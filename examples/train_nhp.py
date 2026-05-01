@@ -34,12 +34,6 @@ python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --exp
 nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id AttNHP_eval > logs/AttNHP_eval.log 2>&1 &
 34421
 
-
-# NHP
-python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id NHP_train
-nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id NHP_train > logs/NHP_train.log 2>&1 &
-# pid=115098
-python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id NHP_eval
-nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id NHP_eval > logs/NHP_eval.log 2>&1 &
-136477
+python examples/train_nhp.py --config_dir examples/configs/ai4s_exp_config.yaml --experiment_id S2P2_train
+python examples/train_nhp.py --config_dir examples/configs/ai4s_exp_config.yaml --experiment_id S2P2_eval
 """
