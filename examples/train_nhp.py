@@ -1,5 +1,6 @@
 import argparse
 
+import easy_tpp.default_registers  # noqa: F401
 from easy_tpp.config_factory import Config
 from easy_tpp.runner import Runner
 
@@ -36,4 +37,6 @@ nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml
 
 python examples/train_nhp.py --config_dir examples/configs/ai4s_exp_config.yaml --experiment_id S2P2_train
 python examples/train_nhp.py --config_dir examples/configs/ai4s_exp_config.yaml --experiment_id S2P2_eval
+python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id S2P2_train
+python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id S2P2_eval
 """

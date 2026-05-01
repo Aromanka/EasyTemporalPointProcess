@@ -83,6 +83,7 @@ S2P2_eval:
     batch_size: 256
     max_epoch: 1
     gpu: 0
+    metrics: ['acc', 'mae', 'rmse', 'mae_log', 'rmse_log']
   model_config:
     hidden_size: 128  # Number of dimensions for u_t and y_t, labeled as H in the paper.
     loss_integral_num_sample_per_step: 10  # How many time points to use to estimate the integrated intensity between each pair of subsequent events for the log-likelihood.

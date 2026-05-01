@@ -1,0 +1,1 @@
+from easy_tpp.default_registers import register_metrics  # noqa: F401
