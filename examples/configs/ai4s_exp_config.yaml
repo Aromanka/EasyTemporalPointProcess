@@ -150,6 +150,7 @@ AttNHP_eval:
   trainer_config:
     batch_size: 128
     max_epoch: 1
+    metrics: ['acc', 'mae', 'rmse', 'mae_log', 'rmse_log']
   model_config:
     hidden_size: 32
     time_emb_size: 16
@@ -161,7 +162,7 @@ AttNHP_eval:
     pretrained_model_dir: ./checkpoints/AttNHP/84656_140350651376832_260428-012245/models/saved_model
     thinning:
       num_seq: 10
-      num_sample: 1
+      num_sample: 100
       num_exp: 500 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
       look_ahead_time: 10
       patience_counter: 5 # the maximum iteration used in adaptive thinning

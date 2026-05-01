@@ -34,6 +34,6 @@ python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --exp
 nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id AttNHP_eval > logs/AttNHP_eval.log 2>&1 &
 34421
 
-python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id S2P2_train
-python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id S2P2_eval
+python examples/train_nhp.py --config_dir examples/configs/ai4s_exp_config.yaml --experiment_id S2P2_train
+python examples/train_nhp.py --config_dir examples/configs/ai4s_exp_config.yaml --experiment_id S2P2_eval
 """
