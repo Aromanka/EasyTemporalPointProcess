@@ -30,14 +30,14 @@ if __name__ == '__main__':
 # AttNHP
 python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id AttNHP_train
 nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id AttNHP_train > logs/AttNHP_train.log 2>&1 &
-# pid=43015, gpu=2
+# pid=9452, gpu=2
 
 python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id AttNHP_eval
 nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id AttNHP_eval > logs/AttNHP_eval.log 2>&1 &
 34421
 
 nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id S2P2_train > logs/S2P2_train.log 2>&1 &
-# pid=40959, gpu=0
+# pid=18896, gpu=0
 python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id S2P2_eval
 
 nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id NHP_train > logs/NHP_train.log 2>&1 &
@@ -57,7 +57,6 @@ python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --exp
 nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id RMTPP_train > logs/RMTPP_train.log 2>&1 &
 # pid=34448, gpu=2
 nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id RMTPP_eval > logs/RMTPP_eval.log 2>&1 &
-
 
 0504: RMTPP, NHP, S2P2, AttNHP
 """
