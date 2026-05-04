@@ -21,22 +21,14 @@ class TPPDataLoader:
         self.kwargs = kwargs
 
     def build_input(self, source_dir, data_format, split):
-        """Helper function to load and process dataset based on file format.
-
-        Args:
-            source_dir (str): Path to dataset directory.
-            split (str): Dataset split, e.g., 'train', 'dev', 'test'.
-
-        Returns:
-            dict: Dictionary containing sequences of event times, types, and intervals.
-        """
-
         if data_format == 'pkl':
-            return self._build_input_from_pkl(source_dir, split)
+            data = self._build_input_from_pkl(source_dir, split)
         elif data_format == 'json':
-            return self._build_input_from_json(source_dir, split)
+            data = self._build_input_from_json(source_dir, split)
         else:
             raise ValueError(f"Unsupported file format: {data_format}")
+
+        return self._apply_time_normalize(data)
 
     def _build_input_from_pkl(self, source_dir, split):
         """Load and process data from a pickle file.
@@ -86,6 +78,27 @@ class TPPDataLoader:
             'type_seqs': data['type_event'],
             'time_delta_seqs': data['time_since_last_event']
         }
+    
+    def _apply_time_normalize(self, data):
+        specs = self.data_config.data_specs
+        mode = str(getattr(specs, "time_normalize", "raw")).lower()
+
+        if mode in ["raw", "none", "identity"]:
+            return data
+
+        if mode == "normal":
+            scale = float(getattr(specs, "time_mean", 1.0) or 1.0)
+            data["time_seqs"] = [
+                [float(t) / scale for t in seq]
+                for seq in data["time_seqs"]
+            ]
+            data["time_delta_seqs"] = [
+                [float(dt) / scale for dt in seq]
+                for seq in data["time_delta_seqs"]
+            ]
+            return data
+
+        raise ValueError(f"Unsupported time_normalize: {mode}")
 
     def get_loader(self, split='train', **kwargs):
         """Get the corresponding data loader.

@@ -1,4 +1,6 @@
-""" Initialize a Pytorch model wrapper that feed into Model Runner   """
+"""Initialize a Pytorch model wrapper that feeds into Model Runner."""
+
+import warnings
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -20,27 +22,34 @@ class TorchModelWrapper:
         self.base_config = base_config
         self.model_config = model_config
         self.trainer_config = trainer_config
-        
-        self.model_id = self.base_config.model_id
-        # Sometimes PyTorch may not switch the active device context for all operations
-        # This causes illegal memory access error
-        if self.trainer_config.gpu!=-1:
-            torch.cuda.set_device(self.trainer_config.gpu)
-        self.device = set_device(self.trainer_config.gpu)
 
+        self.model_id = self.base_config.model_id
+
+        # Sometimes PyTorch may not switch the active device context for all operations.
+        # This can cause illegal memory access errors.
+        if self.trainer_config.gpu != -1:
+            torch.cuda.set_device(self.trainer_config.gpu)
+
+        self.device = set_device(self.trainer_config.gpu)
         self.model.to(self.device)
 
         if self.model_config.is_training:
-            # set up optimizer
             optimizer = self.trainer_config.optimizer
             self.learning_rate = self.trainer_config.learning_rate
-            self.opt = set_optimizer(optimizer, self.model.parameters(), self.learning_rate)
+            self.opt = set_optimizer(
+                optimizer,
+                self.model.parameters(),
+                self.learning_rate,
+            )
 
-        # set up tensorboard
         self.train_summary_writer, self.valid_summary_writer = None, None
         if self.trainer_config.use_tfb:
-            self.train_summary_writer = SummaryWriter(log_dir=self.base_config.specs['tfb_train_dir'])
-            self.valid_summary_writer = SummaryWriter(log_dir=self.base_config.specs['tfb_valid_dir'])
+            self.train_summary_writer = SummaryWriter(
+                log_dir=self.base_config.specs["tfb_train_dir"]
+            )
+            self.valid_summary_writer = SummaryWriter(
+                log_dir=self.base_config.specs["tfb_valid_dir"]
+            )
 
     def restore(self, ckpt_dir):
         """Load the checkpoint to restore the model.
@@ -48,8 +57,8 @@ class TorchModelWrapper:
         Args:
             ckpt_dir (str): path for the checkpoint.
         """
-
-        self.model.load_state_dict(torch.load(ckpt_dir), strict=False)
+        state_dict = torch.load(ckpt_dir, map_location=self.device)
+        self.model.load_state_dict(state_dict, strict=False)
 
     def save(self, ckpt_dir):
         """Save the checkpoint for the model.
@@ -60,153 +69,228 @@ class TorchModelWrapper:
         torch.save(self.model.state_dict(), ckpt_dir)
 
     def write_summary(self, epoch, kv_pairs, phase):
-        """Write the kv_paris into the tensorboard
+        """Write key-value metrics into tensorboard.
 
         Args:
-            epoch (int): epoch index in the training.
+            epoch (int): epoch index.
             kv_pairs (dict): metrics dict.
-            phase (RunnerPhase): a const that defines the stage of model runner.
+            phase (RunnerPhase): runner phase.
         """
-        if self.trainer_config.use_tfb:
-            summary_writer = None
-            if phase == RunnerPhase.TRAIN:
-                summary_writer = self.train_summary_writer
-            elif phase == RunnerPhase.VALIDATE:
-                summary_writer = self.valid_summary_writer
-            elif phase == RunnerPhase.PREDICT:
-                pass
+        if not self.trainer_config.use_tfb:
+            return
 
-            if summary_writer is not None:
-                for k, v in kv_pairs.items():
-                    if k != 'num_events':
-                        summary_writer.add_scalar(k, v, epoch)
+        summary_writer = None
+        if phase == RunnerPhase.TRAIN:
+            summary_writer = self.train_summary_writer
+        elif phase == RunnerPhase.VALIDATE:
+            summary_writer = self.valid_summary_writer
 
-                summary_writer.flush()
-        return
+        if summary_writer is None:
+            return
+
+        for k, v in kv_pairs.items():
+            if k != "num_events":
+                summary_writer.add_scalar(k, v, epoch)
+
+        summary_writer.flush()
 
     def close_summary(self):
-        """Close the tensorboard summary writer.
-        """
+        """Close tensorboard summary writers."""
         if self.train_summary_writer is not None:
             self.train_summary_writer.close()
 
         if self.valid_summary_writer is not None:
             self.valid_summary_writer.close()
-        return
+
+    @staticmethod
+    def _to_int_num_event(num_event):
+        """Convert num_event to Python int safely."""
+        if torch.is_tensor(num_event):
+            return int(num_event.detach().cpu().item())
+        return int(num_event)
+
+    def _predict_type_at_ground_truth_time(self, batch):
+        """Predict next event type at the ground-truth next event time.
+
+        This metric is different from normal acc:
+            normal acc:
+                first predict next time by thinning, then predict type at that predicted time.
+
+            acc_gt_time:
+                use ground-truth next time, only evaluate type prediction.
+
+        Args:
+            batch: list returned by BatchEncoding.values():
+                [time_seqs, time_delta_seqs, type_seqs, seq_non_pad_mask, attention_mask]
+
+        Returns:
+            torch.LongTensor: [batch_size, seq_len - 1]
+        """
+        time_seqs, time_delta_seqs, type_seqs, _, attention_mask = batch
+
+        # Prefix events: [t_0, ..., t_{N-1}]
+        prefix_time = time_seqs[:, :-1]
+        prefix_dtime = time_delta_seqs[:, :-1]
+        prefix_type = type_seqs[:, :-1]
+
+        # Ground-truth next inter-event time: [dt_1, ..., dt_N]
+        gt_next_dtime = time_delta_seqs[:, 1:].unsqueeze(-1)
+
+        kwargs = {"compute_last_step_only": False}
+
+        # Attention-based models should receive the correct prefix mask.
+        # Non-attention models accept **kwargs and ignore it.
+        if attention_mask is not None:
+            kwargs["attention_mask"] = attention_mask[:, :-1, :-1]
+
+        # Important:
+        # Most EasyTPP models expect sample_dtimes as inter-event times.
+        # AttNHP's implementation expects absolute sample times in its loss path.
+        if self.model_id == "AttNHP":
+            sample_times = time_seqs[:, 1:].unsqueeze(-1)
+        else:
+            sample_times = gt_next_dtime
+
+        lambdas = self.model.compute_intensities_at_sample_times(
+            prefix_time,
+            prefix_dtime,
+            prefix_type,
+            sample_times,
+            **kwargs,
+        )
+
+        # Expected shape: [B, L-1, 1, num_event_types]
+        # Be tolerant to implementations that may return [B, L-1, num_event_types].
+        if lambdas.dim() == 4:
+            lambdas = lambdas.squeeze(-2)
+
+        pred_type_gt_time = torch.argmax(lambdas, dim=-1)
+        return pred_type_gt_time
+
+    def _validation_predictions(self, batch):
+        """Generate validation predictions.
+
+        Returns:
+            pred_dtime: np.ndarray or None, [B, L-1]
+            pred_type: np.ndarray or None, [B, L-1]
+            pred_type_gt_time: np.ndarray or None, [B, L-1]
+            label_dtime: np.ndarray, [B, L-1]
+            label_type: np.ndarray, [B, L-1]
+            mask: np.ndarray or None, [B, L-1]
+        """
+        label_dtime, label_type, mask = None, None, None
+        pred_dtime, pred_type, pred_type_gt_time = None, None, None
+
+        if batch[1] is not None and batch[2] is not None:
+            label_dtime = batch[1][:, 1:].detach().cpu().numpy()
+            label_type = batch[2][:, 1:].detach().cpu().numpy()
+
+        if batch[3] is not None:
+            mask = batch[3][:, 1:].detach().cpu().numpy()
+
+        # 1) Normal EasyTPP one-step prediction:
+        #    predict next time by thinning, then predict type at predicted time.
+        if getattr(self.model, "event_sampler", None) is not None:
+            pred_dtime_t, pred_type_t = self.model.predict_one_step_at_every_event(
+                batch=batch
+            )
+            pred_dtime = pred_dtime_t.detach().cpu().numpy()
+            pred_type = pred_type_t.detach().cpu().numpy()
+        else:
+            warnings.warn(
+                f"{self.model_id} has no event_sampler. "
+                "Normal acc/rmse predictions will be None. "
+                "acc_gt_time can still be computed if compute_intensities_at_sample_times is implemented.",
+                RuntimeWarning,
+            )
+
+        # 2) New prediction for acc_gt_time:
+        #    predict type at ground-truth next event time.
+        if hasattr(self.model, "predict_type_at_ground_truth_time"):
+            pred_type_gt_time_t = self.model.predict_type_at_ground_truth_time(
+                batch=batch
+            )
+        else:
+            pred_type_gt_time_t = self._predict_type_at_ground_truth_time(batch)
+
+        pred_type_gt_time = pred_type_gt_time_t.detach().cpu().numpy()
+
+        return pred_dtime, pred_type, pred_type_gt_time, label_dtime, label_type, mask
 
     def run_batch(self, batch, phase):
         """Run one batch.
 
         Args:
-            batch (EasyTPP.BatchEncoding): preprocessed batch data that go into the model.
-            phase (RunnerPhase): a const that defines the stage of model runner.
+            batch (EasyTPP.BatchEncoding): preprocessed batch data.
+            phase (RunnerPhase): train / validate / predict.
 
         Returns:
-            tuple: for training and validation we return loss, prediction and labels;
-            for prediction we return prediction.
-        """
+            For training / validation:
+                loss, num_event, predictions, labels, mask
 
+            For prediction:
+                predictions, labels
+        """
         batch = batch.to(self.device).values()
+
         if phase in (RunnerPhase.TRAIN, RunnerPhase.VALIDATE):
-            # set mode to train
-            is_training = (phase == RunnerPhase.TRAIN)
+            is_training = phase == RunnerPhase.TRAIN
             self.model.train(is_training)
 
-            # FullyRNN needs grad event in validation stage
-            grad_flag = is_training if not self.model_id == 'FullyNN' else True
-            # run model
+            # FullyNN needs grad even in validation stage.
+            grad_flag = is_training if self.model_id != "FullyNN" else True
+
             with torch.set_grad_enabled(grad_flag):
                 loss, num_event = self.model.loglike_loss(batch)
 
-            # Assume we dont do prediction on train set
-            pred_dtime, pred_type, label_dtime, label_type, mask = None, None, None, None, None
+            num_event_int = self._to_int_num_event(num_event)
 
-            # update grad
+            # Default values. This prevents UnboundLocalError in train phase.
+            pred_dtime = None
+            pred_type = None
+            pred_type_gt_time = None
+            label_dtime = None
+            label_type = None
+            mask = None
+
             if is_training:
+                if num_event_int <= 0:
+                    raise RuntimeError(
+                        "num_event is zero in training batch. "
+                        "Please check seq_non_pad_mask, pad_token_id, and input sequence lengths."
+                    )
+
                 self.opt.zero_grad()
                 (loss / num_event).backward()
                 self.opt.step()
-            else:  # by default we do not do evaluation on train set which may take a long time
-                if self.model.event_sampler:
-                    self.model.eval()
-                    with torch.no_grad():
-                        if batch[1] is not None and batch[2] is not None:
-                            label_dtime, label_type = batch[1][:, 1:].cpu().numpy(), batch[2][:, 1:].cpu().numpy()
-                        if batch[3] is not None:
-                            mask = batch[3][:, 1:].cpu().numpy()
-                        pred_dtime, pred_type = self.model.predict_one_step_at_every_event(batch=batch)
 
-                        # Debug Print
-                        if False:
-                            import numpy as np
+            else:
+                self.model.eval()
+                with torch.no_grad():
+                    (
+                        pred_dtime,
+                        pred_type,
+                        pred_type_gt_time,
+                        label_dtime,
+                        label_type,
+                        mask,
+                    ) = self._validation_predictions(batch)
 
-                            pred_np = pred_type.detach().cpu().numpy()
-                            label_np = label_type
-                            mask_np = mask.astype(bool) if mask is not None else np.ones_like(label_np, dtype=bool)
+            predictions = (pred_dtime, pred_type, pred_type_gt_time)
+            labels = (label_dtime, label_type)
 
-                            pred_flat = pred_np[mask_np]
-                            label_flat = label_np[mask_np]
+            return loss.item(), num_event_int, predictions, labels, (mask,)
 
-                            print("\n" + "=" * 80)
-                            print("[EasyTPP Type Prediction Debug]")
-                            print("=" * 80)
-                            print(f"num_valid: {label_flat.size}")
-                            print(f"pred min/max: {pred_flat.min()} / {pred_flat.max()}")
-                            print(f"label min/max: {label_flat.min()} / {label_flat.max()}")
-                            print(f"pred num_unique: {len(np.unique(pred_flat))}")
-                            print(f"label num_unique: {len(np.unique(label_flat))}")
-                            print(f"exact matches: {(pred_flat == label_flat).sum()}")
-                            print(f"acc raw: {np.mean(pred_flat == label_flat):.8f}")
+        # PREDICT / generation phase
+        self.model.eval()
+        with torch.no_grad():
+            pred_dtime, pred_type, label_dtime, label_type = (
+                self.model.predict_multi_step_since_last_event(batch=batch)
+            )
 
-                            pred_vals, pred_counts = np.unique(pred_flat, return_counts=True)
-                            label_vals, label_counts = np.unique(label_flat, return_counts=True)
+        pred_dtime = pred_dtime.detach().cpu().numpy()
+        pred_type = pred_type.detach().cpu().numpy()
+        label_dtime = label_dtime.detach().cpu().numpy()
+        label_type = label_type.detach().cpu().numpy()
 
-                            top_pred = sorted(
-                                zip(pred_vals.tolist(), pred_counts.tolist()),
-                                key=lambda x: x[1],
-                                reverse=True,
-                            )[:20]
-                            top_label = sorted(
-                                zip(label_vals.tolist(), label_counts.tolist()),
-                                key=lambda x: x[1],
-                                reverse=True,
-                            )[:20]
-
-                            print(f"top-20 pred: {top_pred}")
-                            print(f"top-20 label: {top_label}")
-                            print("=" * 80 + "\n")
-
-                        pred_dtime = pred_dtime.detach().cpu().numpy()
-                        pred_type = pred_type.detach().cpu().numpy()
-                        
-                        # Debug Print
-                        if False:
-                            self._debug_time_printed = True
-
-                            import numpy as np
-
-                            dt_np = pred_dtime
-                            label_dt_np = label_dtime
-
-                            mask_np = mask.astype(bool) if mask is not None else np.ones_like(label_dt_np, dtype=bool)
-
-                            pred_flat = dt_np[mask_np]
-                            label_flat = label_dt_np[mask_np]
-
-                            print("\n" + "=" * 80)
-                            print("[EasyTPP Time Prediction Debug]")
-                            print("=" * 80)
-                            print(f"pred_dtime min/max/mean/std: {pred_flat.min()} / {pred_flat.max()} / {pred_flat.mean()} / {pred_flat.std()}")
-                            print(f"label_dtime min/max/mean/std: {label_flat.min()} / {label_flat.max()} / {label_flat.mean()} / {label_flat.std()}")
-                            print(f"num pred_dtime >= 1e4: {(pred_flat >= 1e4).sum()}")
-                            print(f"num pred_dtime >= 1e5: {(pred_flat >= 1e5).sum()}")
-                            print("=" * 80 + "\n")
-
-            return loss.item(), num_event, (pred_dtime, pred_type), (label_dtime, label_type), (mask,)
-        else:
-            pred_dtime, pred_type, label_dtime, label_type = self.model.predict_multi_step_since_last_event(batch=batch)
-            pred_dtime = pred_dtime.detach().cpu().numpy()
-            pred_type = pred_type.detach().cpu().numpy()
-            label_dtime = label_dtime.detach().cpu().numpy()
-            label_type = label_type.detach().cpu().numpy()
-            return (pred_dtime, pred_type), (label_dtime, label_type)
+        return (pred_dtime, pred_type), (label_dtime, label_type)

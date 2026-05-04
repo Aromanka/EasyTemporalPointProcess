@@ -193,3 +193,37 @@ def acc_metric_function(predictions, labels, **kwargs):
     pred = np.reshape(pred, [-1])
     label = np.reshape(label, [-1])
     return np.mean(pred == label)
+
+@MetricsHelper.register(name="acc_gt_time", direction=MetricsHelper.MAXIMIZE, overwrite=True)
+def acc_gt_time_metric_function(predictions, labels, **kwargs):
+    """
+    Accuracy of next type prediction conditioned on ground-truth next event time.
+    predictions[2] should be pred_type_gt_time.
+    """
+    if len(predictions) < 3 or predictions[2] is None:
+        raise ValueError(
+            "acc_gt_time requires predictions[2]. "
+            "Please return (pred_dtime, pred_type, pred_type_gt_time) in TorchModelWrapper.run_batch()."
+        )
+
+    seq_mask = kwargs.get("seq_mask")
+    if seq_mask is None or len(seq_mask) == 0:
+        pred = predictions[2]
+        label = labels[1]
+    else:
+        pred = predictions[2][seq_mask]
+        label = labels[1][seq_mask]
+
+    pred = np.reshape(pred, [-1])
+    label = np.reshape(label, [-1])
+
+    eos_token_id = kwargs.get("eos_token_id", None)
+    if eos_token_id is not None:
+        valid = label != eos_token_id
+        pred = pred[valid]
+        label = label[valid]
+
+    if len(label) == 0:
+        return np.nan
+
+    return float(np.mean(pred == label))

@@ -488,3 +488,46 @@ class TorchBaseModel(nn.Module):
             }
 
         return out_time, out_dtime, out_event, out_mask
+
+    @torch.no_grad()
+    def predict_type_at_ground_truth_time(self, batch):
+        """
+        Predict next event type at the ground-truth next event time.
+
+        Returns:
+            types_pred: [batch_size, seq_len - 1]
+        """
+        time_seq, time_delta_seq, event_seq, _, attention_mask = batch
+
+        prefix_time = time_seq[:, :-1]
+        prefix_dtime = time_delta_seq[:, :-1]
+        prefix_event = event_seq[:, :-1]
+
+        # Most models' compute_intensities_at_sample_times expects inter-event dtime.
+        sample_dtimes = time_delta_seq[:, 1:].unsqueeze(-1)
+
+        kwargs = {"compute_last_step_only": False}
+
+        # Attention-based models need the prefix attention mask.
+        if attention_mask is not None:
+            kwargs["attention_mask"] = attention_mask[:, :-1, :-1]
+
+        # AttNHP is special: its loglike path passes absolute sample times.
+        # Use absolute ground-truth event time for AttNHP.
+        if self.__class__.__name__ == "AttNHP":
+            sample_times = time_seq[:, 1:].unsqueeze(-1)
+        else:
+            sample_times = sample_dtimes
+
+        lambdas = self.compute_intensities_at_sample_times(
+            prefix_time,
+            prefix_dtime,
+            prefix_event,
+            sample_times,
+            **kwargs,
+        )
+
+        # lambdas: [B, L-1, 1, num_event_types]
+        types_pred = torch.argmax(lambdas.squeeze(-2), dim=-1)
+
+        return types_pred

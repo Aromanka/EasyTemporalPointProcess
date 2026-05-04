@@ -157,12 +157,12 @@ AttNHP_train:
   trainer_config:
     batch_size: 16
     max_epoch: 60
-    shuffle: False
+    shuffle: True
     optimizer: adam
     learning_rate: 3.e-4
-    valid_freq: 10
+    valid_freq: 1
     use_tfb: False
-    metrics: [ 'acc', 'rmse' ]
+    metrics: ['acc', 'acc_gt_time', 'rmse']
     seed: 2019
     gpu: 1
   model_config:
