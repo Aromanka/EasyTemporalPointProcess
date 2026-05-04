@@ -160,7 +160,17 @@ class EventSampler(nn.Module):
         result_non_accepted_unfiltered = torch.gather(exp_numbers, 3, first_accepted_indexer.unsqueeze(3))
         
         # [batch_size, max_len, num_sample,1]
-        result = torch.where(non_accepted_filter.unsqueeze(3), torch.tensor(self.dtime_max), result_non_accepted_unfiltered)
+        # result = torch.where(non_accepted_filter.unsqueeze(3), torch.tensor(self.dtime_max), result_non_accepted_unfiltered)
+        fallback = torch.full_like(
+            result_non_accepted_unfiltered,
+            fill_value=float(self.dtime_max),
+        )
+
+        result = torch.where(
+            non_accepted_filter.unsqueeze(3),
+            fallback,
+            result_non_accepted_unfiltered,
+        )
         
         # [batch_size, max_len, num_sample]
         result = result.squeeze(dim=-1)
@@ -226,6 +236,17 @@ class EventSampler(nn.Module):
 
         # [batch_size, seq_len, num_sample]
         weights = torch.ones_like(res)/res.shape[2]
+
+        # dtime_boundary: [B, L]
+        # res: [B, L, num_sample]
+        if dtime_boundary is not None:
+            boundary = dtime_boundary[:, :, None].to(res.device)
+            boundary = torch.clamp(boundary, min=1e-8)
+            res = torch.minimum(res, boundary)
+        else:
+            res = res.clamp(max=self.dtime_max)
+
+        return res, weights
         
         # add a upper bound here in case it explodes, e.g., in ODE models
-        return res.clamp(max=1e5), weights
+        # return res.clamp(max=1e5), weights

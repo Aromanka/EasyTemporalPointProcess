@@ -632,7 +632,7 @@ S2P2_train:
     max_epoch: 300
     shuffle: True
     optimizer: adam
-    learning_rate: 1.e-2
+    learning_rate: 1.e-3
     valid_freq: 1
     use_tfb: False
     metrics: [ 'acc', 'rmse' ]

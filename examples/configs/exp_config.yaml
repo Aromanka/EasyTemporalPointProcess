@@ -30,37 +30,52 @@ data:
       pad_token_id: 1145
       padding_side: right
       truncation_side: right
-#      padding_strategy: max_length
-#      truncation_strategy: longest_first # or Truncate to a maximum length specified with the argument `max_length`
-#      max_len: 20
+  ukb_cd:
+    data_format: json
+    train_dir: data/ukb_cd/train.json
+    valid_dir: data/ukb_cd/val.json
+    test_dir: data/ukb_cd/val.json
+    data_specs:
+      num_event_types: 1145
+      pad_token_id: 1145
+      padding_side: right
+      truncation_side: right
+
+      # important
+      time_normalize: raw
+      time_mean: 1.0
+      log_mean:
+      log_std:
+      eos_token_id:
 
 # s2p2 ----------------------------
 S2P2_train:
   base_config:
     stage: train
     backend: torch
-    dataset_id: amazon
+    dataset_id: ukb_cd
     runner_id: std_tpp
     model_id: S2P2
-    base_dir: './checkpoints/S2P2'
+    base_dir: './checkpoints/S2P2/ukb_cd'
   trainer_config:
-    batch_size: 256
-    max_epoch: 300
+    batch_size: 16
+    max_epoch: 40
     shuffle: True
     optimizer: adam
-    learning_rate: 1.e-2
+    learning_rate: 5.e-4
     valid_freq: 1
     use_tfb: False
-    metrics: [ 'acc', 'rmse' ]
+    metrics: ['acc', 'mae', 'rmse', 'mae_log', 'rmse_log']
     seed: 2019
     gpu: 0  # ID of GPU to use. Set to -1 to use CPU instead. `mps` backend could lead to incorrect results, please use CPU or CUDA.
   model_config:
-    hidden_size: 128  # Number of dimensions for u_t and y_t, labeled as H in the paper.
+    hidden_size: 256  # Number of dimensions for u_t and y_t, labeled as H in the paper.
     loss_integral_num_sample_per_step: 10  # How many time points to use to estimate the integrated intensity between each pair of subsequent events for the log-likelihood.
     use_mc_samples: True  # Use Monte-Carlo sampling for the integral estimation. If False, uses a quadrature with a grid of evenly spaced points.
     num_layers: 4  # Number of LLH layers.
+    gpu: 0
     model_specs:
-      P: 16  # Number of dimensions for the hidden state x_t, labeled as P in the paper.
+      P: 32  # Number of dimensions for the hidden state x_t, labeled as P in the paper.
       dropout_rate: 0.1  # Dropout rate, used immediately after the activation function between layers but before the normalization. Formally, we set u^{(l+1)}_t = LayerNorm(dropout(\sigma(y^{(l)}_t)) + u^{(l)}_t).
       act_func: gelu  # gelu | half_glu | full_glu  # Activation function to use between layers.
       for_loop: True  # If enabled, uses for-loop for computing the recurrence in the LLH layers. If disabled, uses a parallel scan.
@@ -75,21 +90,34 @@ S2P2_eval:
   base_config:
     stage: eval
     backend: torch
-    dataset_id: amazon
+    dataset_id: ukb_cd
     runner_id: std_tpp
     base_dir: './checkpoints/S2P2'
     model_id: S2P2
   trainer_config:
-    batch_size: 256
+    batch_size: 16
     max_epoch: 1
     gpu: 0
+    metrics: ['acc', 'mae', 'rmse', 'mae_log', 'rmse_log']
   model_config:
     hidden_size: 128  # Number of dimensions for u_t and y_t, labeled as H in the paper.
     loss_integral_num_sample_per_step: 10  # How many time points to use to estimate the integrated intensity between each pair of subsequent events for the log-likelihood.
     use_mc_samples: True  # Use Monte-Carlo sampling for the integral estimation. If False, uses a quadrature with a grid of evenly spaced points.
-    num_layers: 4  # Number of LLH layers.
+    num_layers: 2  # Number of LLH layers.
+    pretrained_model_dir: ./checkpoints/S2P2/ukb_cd/37437_140127603774656_260504-011138/models/saved_model
+    gpu: 0
+    thinning:
+      num_seq: 2
+      num_sample: 100
+      num_exp: 50 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
+      look_ahead_time: 10
+      patience_counter: 5 # the maximum iteration used in adaptive thinning
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5
+      num_step_gen: 100
     model_specs:
-      P: 16  # Number of dimensions for the hidden state x_t, labeled as P in the paper.
+      P: 32  # Number of dimensions for the hidden state x_t, labeled as P in the paper.
       dropout_rate: 0.1  # Dropout rate, used immediately after the activation function between layers but before the normalization. Formally, we set u^{(l+1)}_t = LayerNorm(dropout(\sigma(y^{(l)}_t)) + u^{(l)}_t).
       act_func: gelu  # gelu | half_glu | full_glu  # Activation function to use between layers.
       for_loop: True  # If enabled, uses for-loop for computing the recurrence in the LLH layers. If disabled, uses a parallel scan.
@@ -105,13 +133,13 @@ AttNHP_train:
   base_config:
     stage: train
     backend: torch
-    dataset_id: ukb
+    dataset_id: ukb_cd
     runner_id: std_tpp
     model_id: AttNHP # model name
-    base_dir: './checkpoints/AttNHP'
+    base_dir: './checkpoints/AttNHP/ukb_cd'
   trainer_config:
     batch_size: 16
-    max_epoch: 40
+    max_epoch: 60
     shuffle: False
     optimizer: adam
     learning_rate: 3.e-4
@@ -127,7 +155,7 @@ AttNHP_train:
     num_heads: 8
     loss_integral_num_sample_per_step: 10
     use_ln: False
-    pretrained_model_dir: ./checkpoints/S2P2/7500_139707513038656_260501-130703/models/saved_model
+    gpu: 1
     thinning:
       num_seq: 2
       num_sample: 1
@@ -144,32 +172,34 @@ AttNHP_eval:
   base_config:
     stage: eval
     backend: torch
-    dataset_id: ukb
+    dataset_id: ukb_cd
     runner_id: std_tpp
     base_dir: './checkpoints/AttNHP'
     model_id: AttNHP
   trainer_config:
-    batch_size: 128
+    batch_size: 32
     max_epoch: 1
     metrics: ['acc', 'mae', 'rmse', 'mae_log', 'rmse_log']
+    gpu: 1
   model_config:
-    hidden_size: 32
-    time_emb_size: 16
-    num_layers: 3
-    num_heads: 4
+    hidden_size: 128
+    time_emb_size: 32
+    num_layers: 4
+    num_heads: 8
     loss_integral_num_sample_per_step: 10
     use_ln: False
     gpu: 1
-    pretrained_model_dir: ./checkpoints/AttNHP/84656_140350651376832_260428-012245/models/saved_model
+    pretrained_model_dir: checkpoints/AttNHP/ukb_cd/43015_139831880361152_260504-013524/models/saved_model
     thinning:
       num_seq: 10
-      num_sample: 100
-      num_exp: 500 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
+      num_sample: 1
+      num_exp: 50 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
       look_ahead_time: 10
       patience_counter: 5 # the maximum iteration used in adaptive thinning
       over_sample_rate: 5
       num_samples_boundary: 5
       dtime_max: 5
+      num_step_gen: 10
 
 
 # NHP -------------------
@@ -177,13 +207,13 @@ NHP_train:
   base_config:
     stage: train
     backend: torch
-    dataset_id: ukb
+    dataset_id: ukb_cd
     runner_id: std_tpp
     model_id: NHP # model name
-    base_dir: './checkpoints/NHP'
+    base_dir: './checkpoints/NHP/ukb_cd'
   trainer_config:
     batch_size: 16
-    max_epoch: 10
+    max_epoch: 70
     shuffle: True
     optimizer: adam
     learning_rate: 3.e-4
@@ -193,8 +223,9 @@ NHP_train:
     seed: 2019
     gpu: 1
   model_config:
-    hidden_size: 256
+    hidden_size: 512
     loss_integral_num_sample_per_step: 20
+    gpu: 1
 #    pretrained_model_dir: ./checkpoints/75518_4377527680_230530-132355/models/saved_model
     thinning:
       num_seq: 10
@@ -213,14 +244,15 @@ NHP_eval:
   base_config:
     stage: eval
     backend: torch
-    dataset_id: ukb
+    dataset_id: ukb_cd
     runner_id: std_tpp
     base_dir: './checkpoints/'
     model_id: NHP
   trainer_config:
-    batch_size: 128
+    batch_size: 8
     max_epoch: 1
     gpu: 1
+    metrics: ['acc', 'mae', 'rmse', 'mae_log', 'rmse_log']
   model_config:
     hidden_size: 256
     loss_integral_num_sample_per_step: 20
@@ -244,25 +276,25 @@ SAHP_train:
   base_config:
     stage: train
     backend: torch
-    dataset_id: ukb
+    dataset_id: ukb_cd
     runner_id: std_tpp
     model_id: SAHP # model name
-    base_dir: './checkpoints/SAHP'
+    base_dir: './checkpoints/SAHP/ukb_cd'
   trainer_config:
     batch_size: 16
-    max_epoch: 40
+    max_epoch: 30
     shuffle: False
     optimizer: adam
     learning_rate: 3.e-4
     valid_freq: 1
     use_tfb: False
-    metrics: [ 'acc', 'rmse' ]
+    metrics: ['acc', 'mae', 'rmse', 'mae_log', 'rmse_log']
     seed: 2019
-    gpu: 1
+    gpu: 2
   model_config:
-    hidden_size: 128
+    hidden_size: 512
     time_emb_size: 32
-    num_layers: 4
+    num_layers: 8
     num_heads: 8
     loss_integral_num_sample_per_step: 20
     use_ln: False
@@ -275,4 +307,195 @@ SAHP_train:
       over_sample_rate: 5
       num_samples_boundary: 5
       dtime_max: 5
+      num_step_gen: 10
+
+SAHP_eval:
+  base_config:
+    stage: eval
+    backend: torch
+    dataset_id: ukb_cd
+    runner_id: std_tpp
+    base_dir: './checkpoints/'
+    model_id: SAHP
+  trainer_config:
+    batch_size: 16
+    max_epoch: 1
+    gpu: 2
+  model_config:
+    hidden_size: 128
+    time_emb_size: 32
+    num_layers: 12
+    num_heads: 16
+    loss_integral_num_sample_per_step: 20
+    use_ln: False
+    # gpu: 1
+    pretrained_model_dir: ./checkpoints/SAHP/135271_140666585056448_260503-012030/models/saved_model
+    thinning:
+      num_seq: 10
+      num_sample: 100
+      num_exp: 500 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
+      look_ahead_time: 10
+      patience_counter: 5 # the maximum iteration used in adaptive thinning
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 100000
+      num_step_gen: 10
+
+# THP ---------------------
+
+THP_train:
+  base_config:
+    stage: train
+    backend: torch
+    dataset_id: ukb_cd
+    runner_id: std_tpp
+    model_id: THP # model name
+    base_dir: './checkpoints/THP/ukb_cd'
+  trainer_config:
+    batch_size: 16
+    max_epoch: 60
+    shuffle: False
+    optimizer: adam
+    learning_rate: 5.e-4
+    valid_freq: 1
+    use_tfb: False
+    metrics: ['acc', 'mae', 'rmse', 'mae_log', 'rmse_log']
+    seed: 2019
+    gpu: 0
+  model_config:
+    hidden_size: 128
+    time_emb_size: 64
+    num_layers: 12
+    num_heads: 16
+    mc_num_sample_per_step: 20
+    loss_integral_num_sample_per_step: 20
+    use_ln: False
+    thinning:
+      num_seq: 10
+      num_sample: 1
+      num_exp: 500 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
+      look_ahead_time: 10
+      patience_counter: 5 # the maximum iteration used in adaptive thinning
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5
       num_step_gen: 1
+
+# EasyTemporalPointProcess/checkpoints/THP/amazon/237493_140541144605888_260503-122425
+THP_eval:
+  base_config:
+    stage: eval
+    backend: torch
+    dataset_id: ukb_cd
+    runner_id: std_tpp
+    base_dir: './checkpoints/THP/eval'
+    model_id: THP
+  trainer_config:
+    batch_size: 16
+    max_epoch: 1
+    gpu: 0
+    metrics: ['acc', 'mae', 'rmse', 'mae_log', 'rmse_log']
+  model_config:
+    hidden_size: 128
+    time_emb_size: 64
+    num_layers: 12
+    num_heads: 16
+    mc_num_sample_per_step: 20
+    loss_integral_num_sample_per_step: 20
+    use_ln: False
+    gpu: 0
+    pretrained_model_dir: ./checkpoints/THP/ukb_cd/292117_139667242095808_260503-174728/models/saved_model
+    thinning:
+      num_seq: 10
+      num_sample: 100
+      num_exp: 50 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
+      look_ahead_time: 10
+      patience_counter: 5 # the maximum iteration used in adaptive thinning
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 100000
+
+# RMTPP -----
+RMTPP_train:
+  base_config:
+    stage: train
+    backend: torch
+    dataset_id: ukb_cd
+    runner_id: std_tpp
+    model_id: RMTPP # model name
+    base_dir: './checkpoints/RMTPP/ukb_cd'
+  trainer_config:
+    batch_size: 16
+    max_epoch: 40
+    shuffle: False
+    optimizer: adam
+    learning_rate: 5.e-4
+    valid_freq: 1
+    use_tfb: False
+    metrics: [ 'acc', 'rmse' ]
+    seed: 2019
+    gpu: 3
+  model_config:
+    hidden_size: 256
+    time_emb_size: 32
+    num_layers: 8
+    num_heads: 12
+    mc_num_sample_per_step: 20
+    sharing_param_layer: False
+    loss_integral_num_sample_per_step: 20
+    dropout: 0.0
+    use_ln: False
+    thinning:
+      num_seq: 10
+      num_sample: 1
+      num_exp: 500 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
+      look_ahead_time: 10
+      patience_counter: 5 # the maximum iteration used in adaptive thinning
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5
+
+
+RMTPP_eval:
+  base_config:
+    stage: eval
+    backend: torch
+    dataset_id: ukb_cd
+    runner_id: std_tpp
+    model_id: RMTPP # model name
+    base_dir: './checkpoints/RMTPP/ukb_cd'
+  trainer_config:
+    batch_size: 16
+    max_epoch: 1
+    shuffle: False
+    optimizer: adam
+    learning_rate: 1.e-3
+    valid_freq: 1
+    use_tfb: False
+    metrics: ['acc', 'mae', 'rmse', 'mae_log', 'rmse_log']
+    loss_integral_num_sample_per_step: 20
+    dropout: 0.0
+    use_ln: False
+    seed: 2019
+    gpu: 3
+    pretrained_model_dir: checkpoints/RMTPP/ukb_cd/34448_140149733881024_260504-005819/models/saved_model
+  model_config:
+    hidden_size: 256
+    time_emb_size: 32
+    num_layers: 8
+    num_heads: 12
+    mc_num_sample_per_step: 20
+    sharing_param_layer: False
+    loss_integral_num_sample_per_step: 20
+    dropout: 0.0
+    use_ln: False
+    gpu: 3
+    thinning:
+      num_seq: 10
+      num_sample: 100
+      num_exp: 500 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
+      look_ahead_time: 10
+      patience_counter: 5 # the maximum iteration used in adaptive thinning
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5

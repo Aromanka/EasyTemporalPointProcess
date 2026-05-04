@@ -169,9 +169,10 @@ AttNHP_eval:
     base_dir: './checkpoints/AttNHP'
     model_id: AttNHP
   trainer_config:
-    batch_size: 128
+    batch_size: 1024
     max_epoch: 1
     metrics: ['acc', 'mae', 'rmse', 'mae_log', 'rmse_log']
+    gpu: 0
   model_config:
     hidden_size: 32
     time_emb_size: 16
@@ -179,8 +180,8 @@ AttNHP_eval:
     num_heads: 4
     loss_integral_num_sample_per_step: 10
     use_ln: False
-    gpu: 1
-    pretrained_model_dir: ./checkpoints/AttNHP/84656_140350651376832_260428-012245/models/saved_model
+    gpu: 0
+    pretrained_model_dir: checkpoints/AttNHP/676353_140158792885440_260501-152157/models/saved_model
     thinning:
       num_seq: 10
       num_sample: 100

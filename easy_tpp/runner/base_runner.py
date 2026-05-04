@@ -5,6 +5,84 @@ from easy_tpp.preprocess import TPPDataLoader
 from easy_tpp.utils import Registrable, Timer, logger, get_unique_id, LogConst, get_stage, RunnerPhase
 
 
+# helper -----
+import numpy as np
+def print_tpp_dataset_stats(dataset, split_name="valid"):
+    all_time = []
+    all_dtime = []
+    all_type = []
+    seq_lens = []
+
+    for time_seq, dtime_seq, type_seq in zip(
+        dataset.time_seqs,
+        dataset.time_delta_seqs,
+        dataset.type_seqs,
+    ):
+        seq_lens.append(len(type_seq))
+
+        all_time.extend([float(x) for x in time_seq])
+        all_dtime.extend([float(x) for x in dtime_seq])
+        all_type.extend([int(x) for x in type_seq])
+
+    all_time = np.asarray(all_time, dtype=np.float64)
+    all_dtime = np.asarray(all_dtime, dtype=np.float64)
+    all_type = np.asarray(all_type, dtype=np.int64)
+    seq_lens = np.asarray(seq_lens, dtype=np.int64)
+
+    # Optional: remove the first zero delta of each sequence.
+    valid_dtime = []
+    for dtime_seq in dataset.time_delta_seqs:
+        if len(dtime_seq) > 1:
+            valid_dtime.extend([float(x) for x in dtime_seq[1:]])
+    valid_dtime = np.asarray(valid_dtime, dtype=np.float64)
+
+    print("\n" + "=" * 80)
+    print(f"[Dataset Statistics] split = {split_name}")
+    print("=" * 80)
+
+    print(f"num_sequences: {len(dataset)}")
+    print(
+        f"seq_len: "
+        f"min={seq_lens.min()}, "
+        f"max={seq_lens.max()}, "
+        f"mean={seq_lens.mean():.4f}, "
+        f"std={seq_lens.std():.4f}"
+    )
+
+    print(
+        f"time_since_start: "
+        f"min={all_time.min():.6f}, "
+        f"max={all_time.max():.6f}, "
+        f"mean={all_time.mean():.6f}, "
+        f"std={all_time.std():.6f}"
+    )
+
+    print(
+        f"time_since_last_event including first zero: "
+        f"min={all_dtime.min():.6f}, "
+        f"max={all_dtime.max():.6f}, "
+        f"mean={all_dtime.mean():.6f}, "
+        f"std={all_dtime.std():.6f}"
+    )
+
+    if valid_dtime.size > 0:
+        print(
+            f"time_since_last_event excluding first zero: "
+            f"min={valid_dtime.min():.6f}, "
+            f"max={valid_dtime.max():.6f}, "
+            f"mean={valid_dtime.mean():.6f}, "
+            f"std={valid_dtime.std():.6f}"
+        )
+
+    print(
+        f"type_event: "
+        f"min={all_type.min()}, "
+        f"max={all_type.max()}, "
+        f"num_unique={len(np.unique(all_type))}"
+    )
+    print("=" * 80 + "\n")
+
+
 class Runner(Registrable):
     """Registrable Base Runner class.
     """
@@ -113,6 +191,9 @@ class Runner(Registrable):
     def evaluate(self, valid_loader=None, **kwargs):
         if valid_loader is None:
             valid_loader = self._data_loader.valid_loader()
+
+        # Debug Print
+        print_tpp_dataset_stats(valid_loader.dataset, split_name="valid/dev")
 
         logger.info(f'Data \'{self.runner_config.base_config.dataset_id}\' loaded...')
 

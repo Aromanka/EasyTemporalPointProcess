@@ -135,8 +135,73 @@ class TorchModelWrapper:
                         if batch[3] is not None:
                             mask = batch[3][:, 1:].cpu().numpy()
                         pred_dtime, pred_type = self.model.predict_one_step_at_every_event(batch=batch)
+
+                        # Debug Print
+                        if False:
+                            import numpy as np
+
+                            pred_np = pred_type.detach().cpu().numpy()
+                            label_np = label_type
+                            mask_np = mask.astype(bool) if mask is not None else np.ones_like(label_np, dtype=bool)
+
+                            pred_flat = pred_np[mask_np]
+                            label_flat = label_np[mask_np]
+
+                            print("\n" + "=" * 80)
+                            print("[EasyTPP Type Prediction Debug]")
+                            print("=" * 80)
+                            print(f"num_valid: {label_flat.size}")
+                            print(f"pred min/max: {pred_flat.min()} / {pred_flat.max()}")
+                            print(f"label min/max: {label_flat.min()} / {label_flat.max()}")
+                            print(f"pred num_unique: {len(np.unique(pred_flat))}")
+                            print(f"label num_unique: {len(np.unique(label_flat))}")
+                            print(f"exact matches: {(pred_flat == label_flat).sum()}")
+                            print(f"acc raw: {np.mean(pred_flat == label_flat):.8f}")
+
+                            pred_vals, pred_counts = np.unique(pred_flat, return_counts=True)
+                            label_vals, label_counts = np.unique(label_flat, return_counts=True)
+
+                            top_pred = sorted(
+                                zip(pred_vals.tolist(), pred_counts.tolist()),
+                                key=lambda x: x[1],
+                                reverse=True,
+                            )[:20]
+                            top_label = sorted(
+                                zip(label_vals.tolist(), label_counts.tolist()),
+                                key=lambda x: x[1],
+                                reverse=True,
+                            )[:20]
+
+                            print(f"top-20 pred: {top_pred}")
+                            print(f"top-20 label: {top_label}")
+                            print("=" * 80 + "\n")
+
                         pred_dtime = pred_dtime.detach().cpu().numpy()
                         pred_type = pred_type.detach().cpu().numpy()
+                        
+                        # Debug Print
+                        if False:
+                            self._debug_time_printed = True
+
+                            import numpy as np
+
+                            dt_np = pred_dtime
+                            label_dt_np = label_dtime
+
+                            mask_np = mask.astype(bool) if mask is not None else np.ones_like(label_dt_np, dtype=bool)
+
+                            pred_flat = dt_np[mask_np]
+                            label_flat = label_dt_np[mask_np]
+
+                            print("\n" + "=" * 80)
+                            print("[EasyTPP Time Prediction Debug]")
+                            print("=" * 80)
+                            print(f"pred_dtime min/max/mean/std: {pred_flat.min()} / {pred_flat.max()} / {pred_flat.mean()} / {pred_flat.std()}")
+                            print(f"label_dtime min/max/mean/std: {label_flat.min()} / {label_flat.max()} / {label_flat.mean()} / {label_flat.std()}")
+                            print(f"num pred_dtime >= 1e4: {(pred_flat >= 1e4).sum()}")
+                            print(f"num pred_dtime >= 1e5: {(pred_flat >= 1e5).sum()}")
+                            print("=" * 80 + "\n")
+
             return loss.item(), num_event, (pred_dtime, pred_type), (label_dtime, label_type), (mask,)
         else:
             pred_dtime, pred_type, label_dtime, label_type = self.model.predict_multi_step_since_last_event(batch=batch)

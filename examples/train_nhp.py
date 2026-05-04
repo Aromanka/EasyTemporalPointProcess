@@ -30,13 +30,34 @@ if __name__ == '__main__':
 # AttNHP
 python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id AttNHP_train
 nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id AttNHP_train > logs/AttNHP_train.log 2>&1 &
-# pid=67671
+# pid=43015, gpu=2
+
 python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id AttNHP_eval
 nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id AttNHP_eval > logs/AttNHP_eval.log 2>&1 &
 34421
 
-python examples/train_nhp.py --config_dir examples/configs/ai4s_exp_config.yaml --experiment_id S2P2_train
-python examples/train_nhp.py --config_dir examples/configs/ai4s_exp_config.yaml --experiment_id S2P2_eval
-python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id S2P2_train
+nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id S2P2_train > logs/S2P2_train.log 2>&1 &
+# pid=40959, gpu=0
 python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id S2P2_eval
+
+nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id NHP_train > logs/NHP_train.log 2>&1 &
+# pid=37862, gpu=0
+python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id NHP_eval
+
+nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id SAHP_train > logs/SAHP_train.log 2>&1 &
+# pid=18340, gpu=2
+nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id SAHP_eval > logs/SAHP_eval.log 2>&1 &
+
+
+nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id THP_train > logs/THP_train.log 2>&1 &
+# pid=137444, gpu=0
+python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id THP_eval
+
+
+nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id RMTPP_train > logs/RMTPP_train.log 2>&1 &
+# pid=34448, gpu=2
+nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id RMTPP_eval > logs/RMTPP_eval.log 2>&1 &
+
+
+0504: RMTPP, NHP, S2P2, AttNHP
 """
