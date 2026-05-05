@@ -208,10 +208,10 @@ AttNHP_train:
     seed: 2019
     gpu: 0
   model_config:
-    hidden_size: 128
-    time_emb_size: 32
+    hidden_size: 64
+    time_emb_size: 16
     num_layers: 4
-    num_heads: 8
+    num_heads: 4
     loss_integral_num_sample_per_step: 10
     use_ln: False
     gpu: 0
@@ -239,7 +239,7 @@ AttNHP_eval:
     batch_size: 32
     max_epoch: 1
     metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
-    gpu: 1
+    gpu: 0
   model_config:
     hidden_size: 128
     time_emb_size: 32
@@ -247,7 +247,7 @@ AttNHP_eval:
     num_heads: 8
     loss_integral_num_sample_per_step: 10
     use_ln: False
-    gpu: 1
+    gpu: 0
     pretrained_model_dir: checkpoints/AttNHP/ukb_cd_norm/78346_139707453585216_260504-171248/models/saved_model
     thinning:
       num_seq: 10
