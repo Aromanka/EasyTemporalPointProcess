@@ -240,7 +240,16 @@ class EventSampler(nn.Module):
         # dtime_boundary: [B, L]
         # res: [B, L, num_sample]
         if dtime_boundary is not None:
-            boundary = dtime_boundary[:, :, None].to(res.device)
+            boundary = dtime_boundary.to(device=res.device, dtype=res.dtype)
+
+            # When only the last step is requested, intensity_fn may return a single
+            # timestep (e.g. [B, 1, S]).  Keep the boundary on the same timestep axis;
+            # otherwise [B, 1, S] would be broadcast against [B, L, 1] and expand back
+            # to [B, L, S], causing autoregressive generation to append a full prefix.
+            if boundary.size(1) != res.size(1):
+                boundary = boundary[:, -res.size(1):]
+
+            boundary = boundary[:, :, None]
             boundary = torch.clamp(boundary, min=1e-8)
             res = torch.minimum(res, boundary)
         else:
