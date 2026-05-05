@@ -154,16 +154,16 @@ AttNHP_train:
     model_id: AttNHP # model name
     base_dir: './checkpoints/AttNHP/ukb_cd_norm'
   trainer_config:
-    batch_size: 16
+    batch_size: 64
     max_epoch: 60
     shuffle: True
     optimizer: adam
-    learning_rate: 3.e-4
+    learning_rate: 5.e-4
     valid_freq: 1
     use_tfb: False
-    metrics: ['acc', 'acc_gt_time', 'rmse']
+    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
     seed: 2019
-    gpu: 1
+    gpu: 0
   model_config:
     hidden_size: 128
     time_emb_size: 32
@@ -171,7 +171,7 @@ AttNHP_train:
     num_heads: 8
     loss_integral_num_sample_per_step: 10
     use_ln: False
-    gpu: 1
+    gpu: 0
     thinning:
       num_seq: 2
       num_sample: 1
