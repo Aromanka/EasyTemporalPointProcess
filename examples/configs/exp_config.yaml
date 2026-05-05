@@ -231,7 +231,7 @@ AttNHP_eval:
   base_config:
     stage: eval
     backend: torch
-    dataset_id: ukb_cd_normddd
+    dataset_id: ukb_cd_norm
     runner_id: std_tpp
     base_dir: './checkpoints/AttNHP'
     model_id: AttNHP
@@ -248,7 +248,7 @@ AttNHP_eval:
     loss_integral_num_sample_per_step: 10
     use_ln: False
     gpu: 1
-    pretrained_model_dir: checkpoints/AttNHP/amazon/59881_140605419369664_260504-130212/models/saved_model
+    pretrained_model_dir: checkpoints/AttNHP/ukb_cd_norm/78346_139707453585216_260504-171248/models/saved_model
     thinning:
       num_seq: 10
       num_sample: 100
