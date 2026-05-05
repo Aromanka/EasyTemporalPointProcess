@@ -116,7 +116,8 @@ S2P2_eval:
     gpu: 0
     metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
   model_config:
-    pretrained_model_dir: ./checkpoints/S2P2/ukb_cd_norm/86233_140374332979008_260504-230103/models/saved_model
+    pretrained_model_dir: ./checkpoints/S2P2/ukb_cd_norm/104908_140028145624896_260505-170755/models/saved_model
+    # /home/bml/storage/mnt/v-044d0fb740b04ad3/org/lidiwang/mcts/EasyTemporalPointProcess/checkpoints/S2P2/ukb_cd_norm/104908_140028145624896_260505-170755/models/saved_model
     gpu: 0
     hidden_size: 128
     loss_integral_num_sample_per_step: 10
