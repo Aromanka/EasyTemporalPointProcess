@@ -105,7 +105,7 @@ def build_eval_samples(
 
         batch_size = type_seqs.shape[0]
 
-        print(f"Evaluation batch_size={batch_size}")
+        # print(f"Evaluation batch_size={batch_size}")
 
         for i in range(batch_size):
             valid = seq_non_pad_mask[i]
@@ -442,10 +442,21 @@ if __name__ == "__main__":
 # run commands
 python examples/evaluate_trajectory_generation.py \
   --config_dir examples/configs/exp_config.yaml \
-  --experiment_id NHP_eval \
+  --experiment_id S2P2_eval \
   --split val \
   --cutoff_time 21915.0 \
   --max_time 31067.5 \
+  --samples 100 \
+  --max_new_events 100 \
+  --output_dir outputs/nhp_ukb_eval
+
+# run commands for ukb_cd_norm
+python examples/evaluate_trajectory_generation.py \
+  --config_dir examples/configs/exp_config.yaml \
+  --experiment_id S2P2_eval \
+  --split val \
+  --cutoff_time 15.92428 \
+  --max_time 22.5748 \
   --samples 100 \
   --max_new_events 100 \
   --output_dir outputs/nhp_ukb_eval
