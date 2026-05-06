@@ -273,19 +273,19 @@ NHP_train:
     base_dir: './checkpoints/NHP/ukb_cd'
   trainer_config:
     batch_size: 16
-    max_epoch: 70
+    max_epoch: 13
     shuffle: True
     optimizer: adam
     learning_rate: 3.e-4
     valid_freq: 1
     use_tfb: True  # Activate the tensorboard
-    metrics: [ 'acc', 'rmse' ]
+    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
     seed: 2019
-    gpu: 1
+    gpu: 0
   model_config:
     hidden_size: 512
     loss_integral_num_sample_per_step: 20
-    gpu: 1
+    gpu: 0
 #    pretrained_model_dir: ./checkpoints/75518_4377527680_230530-132355/models/saved_model
     thinning:
       num_seq: 10
