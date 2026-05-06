@@ -314,12 +314,11 @@ NHP_eval:
     gpu: 1
     metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
   model_config:
-    hidden_size: 256
+    hidden_size: 512
     loss_integral_num_sample_per_step: 20
     use_ln: False
-    seed: 2019
     # gpu: 1
-    pretrained_model_dir: ./checkpoints/NHP/115098_140717199631552_260429-114920/models/saved_model
+    pretrained_model_dir: ./checkpoints/NHP/ukb_cd/11563_140376193455936_260506-190959/models/saved_model
     thinning:
       num_seq: 10
       num_sample: 1
