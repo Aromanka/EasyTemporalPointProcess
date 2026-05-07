@@ -30,6 +30,16 @@ data:
       pad_token_id: 1145
       padding_side: right
       truncation_side: right
+  mimic_3:
+    data_format: pkl
+    train_dir: data/mimic_3/train.pkl
+    valid_dir: data/mimic_3/dev.pkl
+    test_dir: data/mimic_3/test.pkl
+    data_specs:
+      num_event_types: 864
+      pad_token_id: 864
+      padding_side: right
+      truncation_side: right
   ukb_cd:
     data_format: json
     train_dir: data/ukb_cd/train.json
@@ -193,13 +203,13 @@ AttNHP_train:
   base_config:
     stage: train
     backend: torch
-    dataset_id: ukb_cd_norm
+    dataset_id: mimic_3
     runner_id: std_tpp
     model_id: AttNHP # model name
-    base_dir: './checkpoints/AttNHP/ukb_cd_norm'
+    base_dir: './checkpoints/AttNHP/mimic_3'
   trainer_config:
-    batch_size: 64
-    max_epoch: 60
+    batch_size: 4
+    max_epoch: 30
     shuffle: True
     optimizer: adam
     learning_rate: 5.e-4
@@ -209,9 +219,9 @@ AttNHP_train:
     seed: 2019
     gpu: 0
   model_config:
-    hidden_size: 64
+    hidden_size: 128
     time_emb_size: 16
-    num_layers: 4
+    num_layers: 8
     num_heads: 4
     loss_integral_num_sample_per_step: 10
     use_ln: False
@@ -267,13 +277,13 @@ NHP_train:
   base_config:
     stage: train
     backend: torch
-    dataset_id: ukb_cd
+    dataset_id: mimic_3
     runner_id: std_tpp
     model_id: NHP # model name
-    base_dir: './checkpoints/NHP/ukb_cd'
+    base_dir: './checkpoints/NHP/mimic_3'
   trainer_config:
-    batch_size: 16
-    max_epoch: 13
+    batch_size: 8
+    max_epoch: 15
     shuffle: True
     optimizer: adam
     learning_rate: 3.e-4
@@ -283,7 +293,7 @@ NHP_train:
     seed: 2019
     gpu: 0
   model_config:
-    hidden_size: 512
+    hidden_size: 256
     loss_integral_num_sample_per_step: 20
     gpu: 0
 #    pretrained_model_dir: ./checkpoints/75518_4377527680_230530-132355/models/saved_model
@@ -335,12 +345,12 @@ SAHP_train:
   base_config:
     stage: train
     backend: torch
-    dataset_id: ukb_cd
+    dataset_id: mimic_3
     runner_id: std_tpp
     model_id: SAHP # model name
-    base_dir: './checkpoints/SAHP/ukb_cd'
+    base_dir: './checkpoints/SAHP/mimic_3'
   trainer_config:
-    batch_size: 16
+    batch_size:   
     max_epoch: 30
     shuffle: False
     optimizer: adam
@@ -349,7 +359,7 @@ SAHP_train:
     use_tfb: False
     metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
     seed: 2019
-    gpu: 2
+    gpu: 0
   model_config:
     hidden_size: 512
     time_emb_size: 32
