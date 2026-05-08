@@ -259,12 +259,12 @@ AttNHP_eval:
   base_config:
     stage: eval
     backend: torch
-    dataset_id: mimic_3_norm
+    dataset_id: ukb_cd_norm
     runner_id: std_tpp
-    base_dir: './checkpoints/AttNHP/mimic_3_norm'
+    base_dir: './checkpoints/AttNHP/ukb_cd_norm'
     model_id: AttNHP
   trainer_config:
-    batch_size: 8
+    batch_size: 64
     max_epoch: 1
     metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
     gpu: 0
@@ -276,7 +276,7 @@ AttNHP_eval:
     loss_integral_num_sample_per_step: 10
     use_ln: False
     gpu: 0
-    pretrained_model_dir: checkpoints/AttNHP/mimic_3_norm/8763_139816927557440_260507-184159/models/saved_model
+    pretrained_model_dir: checkpoints/AttNHP/ukb_cd_norm/6446_140094102423360_260508-123206/models/saved_model
     thinning:
       num_seq: 10
       num_sample: 100
@@ -602,14 +602,14 @@ WSMTHP_train:
     max_epoch: 30
     shuffle: False
     optimizer: adam
-    learning_rate: 5.e-4
+    learning_rate: 1.e-3
     valid_freq: 10
     use_tfb: False
-    metrics: [ 'acc', 'rmse' ]
+    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
     seed: 2019
     gpu: 0
   model_config:
-    hidden_size: 1201            # Transformer model dimension d_model
+    hidden_size: 120            # Transformer model dimension d_model
     num_layers: 12              # Number of Transformer encoder layers
     num_heads: 12               # Number of attention heads
     dropout_rate: 0.1
