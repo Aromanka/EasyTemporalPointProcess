@@ -481,7 +481,7 @@ THP_eval:
     batch_size: 16
     max_epoch: 1
     gpu: 0
-    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
+    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'ukb_mae', 'ukb_rmse']
   model_config:
     hidden_size: 128
     time_emb_size: 64
