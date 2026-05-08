@@ -609,7 +609,7 @@ WSMTHP_train:
     seed: 2019
     gpu: 0
   model_config:
-    hidden_size: 128            # Transformer model dimension d_model
+    hidden_size: 1201            # Transformer model dimension d_model
     num_layers: 12              # Number of Transformer encoder layers
     num_heads: 12               # Number of attention heads
     dropout_rate: 0.1
