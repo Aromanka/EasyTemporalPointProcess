@@ -409,14 +409,14 @@ SAHP_eval:
     gpu: 0
     metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
   model_config:
-    hidden_size: 256
+    hidden_size: 120
     time_emb_size: 32
     num_layers: 12
-    num_heads: 4
+    num_heads: 12
     loss_integral_num_sample_per_step: 20
     use_ln: False
     # gpu: 1
-    pretrained_model_dir: ./checkpoints/SAHP/mimic_3_norm/18663_140213636380480_260507-234020/models/saved_model
+    pretrained_model_dir: ./checkpoints/SAHP/ukb_cd_norm/17032_140231450658624_260508-175849/models/saved_model
     thinning:
       num_seq: 10
       num_sample: 100
@@ -602,8 +602,8 @@ WSMTHP_train:
     max_epoch: 30
     shuffle: False
     optimizer: adam
-    learning_rate: 1.e-3
-    valid_freq: 10
+    learning_rate: 5.e-4
+    valid_freq: 1
     use_tfb: False
     metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
     seed: 2019
@@ -616,7 +616,7 @@ WSMTHP_train:
     loss_integral_num_sample_per_step: 20  # kept for EasyTPP compatibility
     thinning:
       num_seq: 10
-      num_sample: 1
+      num_sample: 10
       num_exp: 500
       look_ahead_time: 10
       patience_counter: 5

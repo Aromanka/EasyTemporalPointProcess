@@ -30,3 +30,4 @@ notebooks/checkpoints/*
 data/
 checkpoints/
 logs/
+outputs/
