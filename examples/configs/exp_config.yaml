@@ -362,31 +362,31 @@ SAHP_train:
   base_config:
     stage: train
     backend: torch
-    dataset_id: amazon
+    dataset_id: ukb_cd_norm
     runner_id: std_tpp
     model_id: SAHP # model name
-    base_dir: './checkpoints/SAHP/amazon'
+    base_dir: './checkpoints/SAHP/ukb_cd_norm'
   trainer_config:
-    batch_size: 16
+    batch_size: 64
     max_epoch: 30
     shuffle: False
     optimizer: adam
-    learning_rate: 1.e-3
+    learning_rate: 5.e-4
     valid_freq: 1
     use_tfb: False
     metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
     seed: 2019
     gpu: 0
   model_config:
-    hidden_size: 256
+    hidden_size: 120
     time_emb_size: 32
     num_layers: 12
-    num_heads: 4
+    num_heads: 12
     loss_integral_num_sample_per_step: 20
     use_ln: False
     thinning:
       num_seq: 10
-      num_sample: 1
+      num_sample: 10
       num_exp: 500 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
       look_ahead_time: 10
       patience_counter: 5 # the maximum iteration used in adaptive thinning
@@ -434,10 +434,10 @@ THP_train:
   base_config:
     stage: train
     backend: torch
-    dataset_id: ukb_cd
+    dataset_id: ukb_cd_norm
     runner_id: std_tpp
     model_id: THP # model name
-    base_dir: './checkpoints/THP/ukb_cd'
+    base_dir: './checkpoints/THP/ukb_cd_norm'
   trainer_config:
     batch_size: 16
     max_epoch: 60
