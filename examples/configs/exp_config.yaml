@@ -598,7 +598,7 @@ WSMTHP_train:
     model_id: WSMTHP           # must match the class name in torch_wsm_thp.py
     base_dir: './checkpoints/ukb_cd_norm'
   trainer_config:
-    batch_size: 32
+    batch_size: 64
     max_epoch: 30
     shuffle: False
     optimizer: adam
@@ -610,8 +610,8 @@ WSMTHP_train:
     gpu: 0
   model_config:
     hidden_size: 128            # Transformer model dimension d_model
-    num_layers: 8              # Number of Transformer encoder layers
-    num_heads: 8               # Number of attention heads
+    num_layers: 12              # Number of Transformer encoder layers
+    num_heads: 12               # Number of attention heads
     dropout_rate: 0.1
     loss_integral_num_sample_per_step: 20  # kept for EasyTPP compatibility
     thinning:
