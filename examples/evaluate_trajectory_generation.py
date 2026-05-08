@@ -459,5 +459,5 @@ python examples/evaluate_trajectory_generation.py \
   --max_time 22.5748 \
   --samples 100 \
   --max_new_events 100 \
-  --output_dir outputs/nhp_ukb_eval
+  --output_dir outputs/s2p2_ukb_eval
 """
