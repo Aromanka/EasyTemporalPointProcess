@@ -141,7 +141,7 @@ S2P2_eval:
     batch_size: 32
     max_epoch: 1
     gpu: 0
-    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
+    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log', 'ukb_mae', 'ukb_rmse']
   model_config:
     pretrained_model_dir: ./checkpoints/S2P2/ukb_cd_norm/104908_140028145624896_260505-170755/models/saved_model
     # /home/bml/storage/mnt/v-044d0fb740b04ad3/org/lidiwang/mcts/EasyTemporalPointProcess/checkpoints/S2P2/ukb_cd_norm/104908_140028145624896_260505-170755/models/saved_model
@@ -266,7 +266,7 @@ AttNHP_eval:
   trainer_config:
     batch_size: 64
     max_epoch: 1
-    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
+    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log', 'ukb_mae', 'ukb_rmse']
     gpu: 0
   model_config:
     hidden_size: 128
@@ -339,7 +339,7 @@ NHP_eval:
     batch_size: 8
     max_epoch: 1
     gpu: 0
-    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
+    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log', 'ukb_mae', 'ukb_rmse']
   model_config:
     hidden_size: 512
     loss_integral_num_sample_per_step: 20
@@ -407,7 +407,7 @@ SAHP_eval:
     batch_size: 16
     max_epoch: 1
     gpu: 0
-    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
+    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log', 'ukb_mae', 'ukb_rmse']
   model_config:
     hidden_size: 120
     time_emb_size: 32
@@ -481,7 +481,7 @@ THP_eval:
     batch_size: 16
     max_epoch: 1
     gpu: 0
-    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'ukb_mae', 'ukb_rmse']
+    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'ukb_mae', 'ukb_rmse', 'ukb_mae', 'ukb_rmse']
   model_config:
     hidden_size: 128
     time_emb_size: 64
