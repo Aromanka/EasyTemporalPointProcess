@@ -607,7 +607,7 @@ WSMTHP_train:
     use_tfb: False
     metrics: [ 'acc', 'rmse' ]
     seed: 2019
-    gpu: -1
+    gpu: 0
   model_config:
     hidden_size: 128            # Transformer model dimension d_model
     num_layers: 8              # Number of Transformer encoder layers

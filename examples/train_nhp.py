@@ -59,4 +59,7 @@ nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml
 nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id RMTPP_eval > logs/RMTPP_eval.log 2>&1 &
 
 0504: RMTPP, NHP, S2P2, AttNHP
+
+
+python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id WSMTHP_train
 """
