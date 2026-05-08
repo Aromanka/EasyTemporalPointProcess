@@ -103,7 +103,7 @@ S2P2_train:
     base_dir: './checkpoints/S2P2/ukb_cd_norm'
   trainer_config:
     batch_size: 8
-    max_epoch: 60
+    max_epoch: 30
     shuffle: True
     optimizer: adam
     learning_rate: 3.e-4
