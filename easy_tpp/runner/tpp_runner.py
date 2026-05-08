@@ -4,6 +4,7 @@ from easy_tpp.runner.base_runner import Runner
 from easy_tpp.utils import RunnerPhase, logger, MetricsHelper, MetricsTracker, concat_element, save_pickle
 from easy_tpp.utils.const import Backend
 from tqdm import tqdm
+import os
 
 
 @Runner.register(name='std_tpp')
@@ -123,6 +124,14 @@ class TPPRunner(Runner):
                     logger.info(message)
 
                 logger.critical(message_valid)
+
+        last_ckpt_dir = os.path.join(
+            self.runner_config.base_config.base_dir,
+            f"{self.runner_config.base_config.exp_id}_last_checkpoint"
+        )
+        os.makedirs(os.path.dirname(last_ckpt_dir), exist_ok=True)
+        self.model_wrapper.save(last_ckpt_dir)
+        logger.critical(f"Save last epoch checkpoint to {last_ckpt_dir}")
 
         self.model_wrapper.close_summary()
 

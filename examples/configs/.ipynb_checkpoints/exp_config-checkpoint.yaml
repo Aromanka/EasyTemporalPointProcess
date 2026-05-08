@@ -220,10 +220,10 @@ AttNHP_train:
   base_config:
     stage: train
     backend: torch
-    dataset_id: ukb_cd_norm
+    dataset_id: mimic_3_norm
     runner_id: std_tpp
     model_id: AttNHP # model name
-    base_dir: './checkpoints/AttNHP/ukb_cd_norm'
+    base_dir: './checkpoints/AttNHP/mimic_3_norm'
   trainer_config:
     batch_size: 8
     max_epoch: 20
@@ -259,24 +259,24 @@ AttNHP_eval:
   base_config:
     stage: eval
     backend: torch
-    dataset_id: mimic_3_norm
+    dataset_id: ukb_cd_norm
     runner_id: std_tpp
-    base_dir: './checkpoints/AttNHP/mimic_3_norm'
+    base_dir: './checkpoints/AttNHP'
     model_id: AttNHP
   trainer_config:
-    batch_size: 8
+    batch_size: 32
     max_epoch: 1
     metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
     gpu: 0
   model_config:
     hidden_size: 128
     time_emb_size: 32
-    num_layers: 8
+    num_layers: 4
     num_heads: 8
     loss_integral_num_sample_per_step: 10
     use_ln: False
     gpu: 0
-    pretrained_model_dir: checkpoints/AttNHP/mimic_3_norm/8763_139816927557440_260507-184159/models/saved_model
+    pretrained_model_dir: checkpoints/AttNHP/ukb_cd_norm/78346_139707453585216_260504-171248/models/saved_model
     thinning:
       num_seq: 10
       num_sample: 100
@@ -299,18 +299,18 @@ NHP_train:
     model_id: NHP # model name
     base_dir: './checkpoints/NHP/mimic_3'
   trainer_config:
-    batch_size: 16
-    max_epoch: 10
+    batch_size: 8
+    max_epoch: 15
     shuffle: True
     optimizer: adam
-    learning_rate: 2.e-4
+    learning_rate: 3.e-4
     valid_freq: 1
     use_tfb: True  # Activate the tensorboard
     metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
     seed: 2019
     gpu: 0
   model_config:
-    hidden_size: 512
+    hidden_size: 256
     loss_integral_num_sample_per_step: 20
     gpu: 0
 #    pretrained_model_dir: ./checkpoints/75518_4377527680_230530-132355/models/saved_model
@@ -362,26 +362,26 @@ SAHP_train:
   base_config:
     stage: train
     backend: torch
-    dataset_id: amazon
+    dataset_id: mimic_3
     runner_id: std_tpp
     model_id: SAHP # model name
-    base_dir: './checkpoints/SAHP/amazon'
+    base_dir: './checkpoints/SAHP/mimic_3'
   trainer_config:
-    batch_size: 16
+    batch_size:   
     max_epoch: 30
     shuffle: False
     optimizer: adam
-    learning_rate: 1.e-3
+    learning_rate: 3.e-4
     valid_freq: 1
     use_tfb: False
     metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
     seed: 2019
     gpu: 0
   model_config:
-    hidden_size: 256
+    hidden_size: 512
     time_emb_size: 32
-    num_layers: 12
-    num_heads: 4
+    num_layers: 8
+    num_heads: 8
     loss_integral_num_sample_per_step: 20
     use_ln: False
     thinning:
@@ -399,33 +399,32 @@ SAHP_eval:
   base_config:
     stage: eval
     backend: torch
-    dataset_id: mimic_3
+    dataset_id: ukb_cd
     runner_id: std_tpp
-    base_dir: './checkpoints/SAHP/mimic_3'
+    base_dir: './checkpoints/'
     model_id: SAHP
   trainer_config:
     batch_size: 16
     max_epoch: 1
-    gpu: 0
-    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
+    gpu: 2
   model_config:
-    hidden_size: 256
+    hidden_size: 128
     time_emb_size: 32
     num_layers: 12
-    num_heads: 4
+    num_heads: 16
     loss_integral_num_sample_per_step: 20
     use_ln: False
     # gpu: 1
-    pretrained_model_dir: ./checkpoints/SAHP/mimic_3_norm/18663_140213636380480_260507-234020/models/saved_model
+    pretrained_model_dir: ./checkpoints/SAHP/135271_140666585056448_260503-012030/models/saved_model
     thinning:
       num_seq: 10
       num_sample: 100
-      num_exp: 50 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
+      num_exp: 500 # number of i.i.d. Exp(intensity_bound) draws at one time in thinning algorithm
       look_ahead_time: 10
       patience_counter: 5 # the maximum iteration used in adaptive thinning
       over_sample_rate: 5
       num_samples_boundary: 5
-      dtime_max: 5
+      dtime_max: 100000
       num_step_gen: 10
 
 # THP ---------------------
