@@ -102,7 +102,7 @@ S2P2_train:
     model_id: S2P2
     base_dir: './checkpoints/S2P2/mimic_3_norm'
   trainer_config:
-    batch_size: 32
+    batch_size: 16
     max_epoch: 60
     shuffle: True
     optimizer: adam
@@ -133,9 +133,9 @@ S2P2_eval:
   base_config:
     stage: eval
     backend: torch
-    dataset_id: ukb_cd_norm
+    dataset_id: mimic_3_norm
     runner_id: std_tpp
-    base_dir: './checkpoints/S2P2'
+    base_dir: './checkpoints/S2P2/mimic_3_norm'
     model_id: S2P2
   trainer_config:
     batch_size: 16
@@ -143,13 +143,13 @@ S2P2_eval:
     gpu: 0
     metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log', 'ukb_mae', 'ukb_rmse']
   model_config:
-    pretrained_model_dir: ./checkpoints/S2P2/ukb_cd_norm/104908_140028145624896_260505-170755/models/saved_model
+    pretrained_model_dir: ./checkpoints/S2P2/mimic_3_norm/13488_140354258208576_260508-220240/models/saved_model
     # /home/bml/storage/mnt/v-044d0fb740b04ad3/org/lidiwang/mcts/EasyTemporalPointProcess/checkpoints/S2P2/ukb_cd_norm/104908_140028145624896_260505-170755/models/saved_model
     gpu: 0
     hidden_size: 128
     loss_integral_num_sample_per_step: 10
     use_mc_samples: True
-    num_layers: 4
+    num_layers: 8
     model_specs:
       P: 64  # Number of dimensions for the hidden state x_t, labeled as P in the paper.
       dropout_rate: 0.1  # Dropout rate, used immediately after the activation function between layers but before the normalization. Formally, we set u^{(l+1)}_t = LayerNorm(dropout(\sigma(y^{(l)}_t)) + u^{(l)}_t).
