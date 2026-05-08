@@ -97,16 +97,16 @@ S2P2_train:
   base_config:
     stage: train
     backend: torch
-    dataset_id: ukb_cd_norm
+    dataset_id: mimic_3_norm
     runner_id: std_tpp
     model_id: S2P2
-    base_dir: './checkpoints/S2P2/ukb_cd_norm'
+    base_dir: './checkpoints/S2P2/mimic_3_norm'
   trainer_config:
-    batch_size: 64
+    batch_size: 32
     max_epoch: 60
     shuffle: True
     optimizer: adam
-    learning_rate: 1.e-3
+    learning_rate: 5.e-4
     valid_freq: 1
     use_tfb: False
     metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'mae_log', 'rmse_log']
@@ -116,7 +116,7 @@ S2P2_train:
     hidden_size: 128
     loss_integral_num_sample_per_step: 10
     use_mc_samples: True
-    num_layers: 4
+    num_layers: 8
     model_specs:
       P: 64  # Number of dimensions for the hidden state x_t, labeled as P in the paper.
       dropout_rate: 0.1  # Dropout rate, used immediately after the activation function between layers but before the normalization. Formally, we set u^{(l+1)}_t = LayerNorm(dropout(\sigma(y^{(l)}_t)) + u^{(l)}_t).
@@ -481,7 +481,7 @@ THP_eval:
     batch_size: 16
     max_epoch: 1
     gpu: 0
-    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'ukb_mae', 'ukb_rmse', 'ukb_mae', 'ukb_rmse']
+    metrics: ['acc', 'acc_gt_time', 'mae', 'rmse', 'ukb_mae', 'ukb_rmse']
   model_config:
     hidden_size: 128
     time_emb_size: 64
