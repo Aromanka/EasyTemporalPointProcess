@@ -225,7 +225,7 @@ AttNHP_train:
     model_id: AttNHP # model name
     base_dir: './checkpoints/AttNHP/ukb_cd_norm'
   trainer_config:
-    batch_size: 8
+    batch_size: 64
     max_epoch: 20
     shuffle: True
     optimizer: adam
@@ -586,3 +586,50 @@ RMTPP_eval:
       over_sample_rate: 5
       num_samples_boundary: 5
       dtime_max: 5
+
+# ======
+
+WSMTHP_train:
+  base_config:
+    stage: train
+    backend: torch
+    dataset_id: ukb_cd_norm           # change to the dataset you want to use
+    runner_id: std_tpp
+    model_id: WSMTHP           # must match the class name in torch_wsm_thp.py
+    base_dir: './checkpoints/ukb_cd_norm'
+  trainer_config:
+    batch_size: 32
+    max_epoch: 30
+    shuffle: False
+    optimizer: adam
+    learning_rate: 5.e-4
+    valid_freq: 10
+    use_tfb: False
+    metrics: [ 'acc', 'rmse' ]
+    seed: 2019
+    gpu: -1
+  model_config:
+    hidden_size: 128            # Transformer model dimension d_model
+    num_layers: 8              # Number of Transformer encoder layers
+    num_heads: 8               # Number of attention heads
+    dropout_rate: 0.1
+    loss_integral_num_sample_per_step: 20  # kept for EasyTPP compatibility
+    thinning:
+      num_seq: 10
+      num_sample: 1
+      num_exp: 500
+      look_ahead_time: 10
+      patience_counter: 5
+      over_sample_rate: 5
+      num_samples_boundary: 5
+      dtime_max: 5
+      num_step_gen: 1
+    model_specs:
+      # WSM-specific hyperparameters      CE_coef: 10.0            # weight for mark cross-entropy loss (??in the paper)
+      h_type: two_side_op      # weight function; only 'two_side_op' is currently supported
+      T_mode: train_global     # manual | train_global | batch
+      max_observed_time:       # used when T_mode=manual
+      d_inner: 32              # FFN hidden dimension (default: hidden_size * 2)
+      with_survival: false     # optional finite-window survival classifier from the paper
+      alpha_survival: 10.0     # weight for the survival classification loss when enabled
+      alpha_neg: 10.0          # class weight for non-terminal events in the survival loss

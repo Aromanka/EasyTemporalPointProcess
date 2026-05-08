@@ -662,25 +662,25 @@ WSMTHP_train:
   base_config:
     stage: train
     backend: torch
-    dataset_id: taobao           # change to the dataset you want to use
+    dataset_id: ukb_cd_norm           # change to the dataset you want to use
     runner_id: std_tpp
     model_id: WSMTHP           # must match the class name in torch_wsm_thp.py
-    base_dir: './checkpoints/'
+    base_dir: './checkpoints/ukb_cd_norm'
   trainer_config:
-    batch_size: 64
-    max_epoch: 200
+    batch_size: 32
+    max_epoch: 30
     shuffle: False
     optimizer: adam
-    learning_rate: 1.e-3
+    learning_rate: 5.e-4
     valid_freq: 10
     use_tfb: False
     metrics: [ 'acc', 'rmse' ]
     seed: 2019
     gpu: -1
   model_config:
-    hidden_size: 16            # Transformer model dimension d_model
-    num_layers: 2              # Number of Transformer encoder layers
-    num_heads: 2               # Number of attention heads
+    hidden_size: 128            # Transformer model dimension d_model
+    num_layers: 8              # Number of Transformer encoder layers
+    num_heads: 8               # Number of attention heads
     dropout_rate: 0.1
     loss_integral_num_sample_per_step: 20  # kept for EasyTPP compatibility
     thinning:
