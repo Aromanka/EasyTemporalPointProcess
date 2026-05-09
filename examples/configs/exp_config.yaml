@@ -344,7 +344,7 @@ NHP_eval:
     hidden_size: 512
     loss_integral_num_sample_per_step: 20
     use_ln: False
-    # gpu: 1
+    # gpu: 0
     pretrained_model_dir: ./checkpoints/NHP/ukb_cd_norm/3437_139686406629184_260509-121541/models/saved_model
     thinning:
       num_seq: 10

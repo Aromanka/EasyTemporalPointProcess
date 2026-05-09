@@ -451,13 +451,16 @@ python examples/evaluate_trajectory_generation.py \
   --output_dir outputs/nhp_ukb_eval
 
 # run commands for ukb_cd_norm
+nohup \
 python examples/evaluate_trajectory_generation.py \
   --config_dir examples/configs/exp_config.yaml \
   --experiment_id NHP_eval \
   --split val \
   --cutoff_time 15.92428 \
   --max_time 22.5748 \
-  --samples 100 \
   --max_new_events 100 \
-  --output_dir outputs/nhp_ukb_eval
+  --samples 4000 \
+  --output_dir outputs/nhp_ukb_eval \
+> logs/NHP_eval_gen.log 2>&1 &
+pid = 965677, gpu=0
 """
