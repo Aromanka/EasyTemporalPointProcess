@@ -453,11 +453,11 @@ python examples/evaluate_trajectory_generation.py \
 # run commands for ukb_cd_norm
 python examples/evaluate_trajectory_generation.py \
   --config_dir examples/configs/exp_config.yaml \
-  --experiment_id S2P2_eval \
+  --experiment_id NHP_eval \
   --split val \
   --cutoff_time 15.92428 \
   --max_time 22.5748 \
   --samples 100 \
   --max_new_events 100 \
-  --output_dir outputs/s2p2_ukb_eval
+  --output_dir outputs/nhp_ukb_eval
 """

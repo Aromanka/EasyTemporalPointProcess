@@ -40,6 +40,8 @@ nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml
 # pid=62380, gpu=0
 python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id S2P2_eval
 
+# NHP
+python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id NHP_train
 nohup python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id NHP_train > logs/NHP_train.log 2>&1 &
 # pid=37862, gpu=0
 python examples/train_nhp.py --config_dir examples/configs/exp_config.yaml --experiment_id NHP_eval
