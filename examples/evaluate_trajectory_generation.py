@@ -454,13 +454,13 @@ python examples/evaluate_trajectory_generation.py \
 nohup \
 python examples/evaluate_trajectory_generation.py \
   --config_dir examples/configs/exp_config.yaml \
-  --experiment_id NHP_eval \
+  --experiment_id S2P2_eval \
   --split val \
   --cutoff_time 15.92428 \
   --max_time 22.5748 \
   --max_new_events 100 \
   --samples 4000 \
-  --output_dir outputs/nhp_ukb_eval \
-> logs/NHP_eval_gen.log 2>&1 &
-pid = 965677, gpu=0
+  --output_dir outputs/s2p2_ukb_eval \
+> logs/S2P2_eval_gen.log 2>&1 &
+pid = 1487838, gpu=0
 """
